@@ -957,6 +957,7 @@
     </ul>
     <div class="sidebar-footer">
       <p>© 2026 Vovó Tereza Admin</p>
+      <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:12px" onclick="logoutAdmin()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
     </div>
   </aside>
 
@@ -973,7 +974,7 @@
       <div class="topbar-right">
         <div class="live-visitors">
           <div class="live-dot"></div>
-          <span><strong id="live-counter">27</strong> pessoas no site</span>
+          <span><strong id="live-counter">—</strong> pessoas no site</span>
         </div>
         <div class="admin-profile">
           <span>Administrador</span>
@@ -992,9 +993,9 @@
           <div class="metric-card">
             <div class="metric-info">
               <h3>Faturamento Total</h3>
-              <div class="metric-value" id="stat-revenue">$3,596,400</div>
+              <div class="metric-value" id="stat-revenue">—</div>
               <div class="metric-trend trend-up">
-                <i class="fa-solid fa-arrow-trend-up"></i> +12.4% este mês
+                Carregando dados do banco
               </div>
             </div>
             <div class="metric-icon-box revenue">
@@ -1004,9 +1005,9 @@
           <div class="metric-card">
             <div class="metric-info">
               <h3>Total de Vendas</h3>
-              <div class="metric-value" id="stat-sales">360,000+</div>
+              <div class="metric-value" id="stat-sales">—</div>
               <div class="metric-trend trend-up">
-                <i class="fa-solid fa-arrow-trend-up"></i> +8.1% este mês
+                Carregando dados do banco
               </div>
             </div>
             <div class="metric-icon-box sales">
@@ -1016,9 +1017,9 @@
           <div class="metric-card">
             <div class="metric-info">
               <h3>Taxa de Conversão</h3>
-              <div class="metric-value">3.4%</div>
+              <div class="metric-value" id="stat-conversion">—</div>
               <div class="metric-trend trend-up">
-                <i class="fa-solid fa-arrow-trend-up"></i> +0.4% em relação a ontem
+                Carregando dados do banco
               </div>
             </div>
             <div class="metric-icon-box conversion">
@@ -1028,9 +1029,9 @@
           <div class="metric-card">
             <div class="metric-info">
               <h3>Cliques Checkout</h3>
-              <div class="metric-value">482,105</div>
+              <div class="metric-value" id="stat-checkout-clicks">—</div>
               <div class="metric-trend trend-up">
-                <i class="fa-solid fa-arrow-trend-up"></i> +15.2% no funil
+                Carregando dados do banco
               </div>
             </div>
             <div class="metric-icon-box visitors">
@@ -1045,7 +1046,7 @@
           <div class="card chart-container">
             <div class="section-header">
               <h2>Desempenho de Vendas (Últimos 7 dias)</h2>
-              <span class="status-badge success" style="font-size: 11px;">Atualizado há 1 min</span>
+              <span class="status-badge success" style="font-size: 11px;">Dados do banco</span>
             </div>
             <div class="svg-chart-wrapper">
               <svg class="svg-chart" viewBox="0 0 600 220" preserveAspectRatio="none">
@@ -1063,19 +1064,19 @@
                 <line x1="0" y1="205" x2="600" y2="205" class="chart-grid-line" />
                 
                 <!-- Área do Gráfico Preenchida -->
-                <path d="M 10 205 Q 100 130 190 160 T 370 70 T 550 40 L 550 205 Z" class="chart-area"></path>
+                <path d="M 10 205 L 550 205 L 10 205 Z" class="chart-area"></path>
                 
                 <!-- Linha do Gráfico -->
-                <path d="M 10 205 Q 100 130 190 160 T 370 70 T 550 40" class="chart-line" stroke-dasharray="1000" stroke-dashoffset="1000"></path>
+                <path d="M 10 205 L 100 205 L 190 205 L 280 205 L 370 205 L 460 205 L 550 205" class="chart-line"></path>
                 
                 <!-- Pontos de Dados -->
-                <circle cx="10" cy="205" r="5" class="chart-point" title="Seg: $980"></circle>
-                <circle cx="100" cy="130" r="5" class="chart-point" title="Ter: $1,450"></circle>
-                <circle cx="190" cy="160" r="5" class="chart-point" title="Qua: $1,210"></circle>
-                <circle cx="280" cy="110" r="5" class="chart-point" title="Qui: $1,590"></circle>
-                <circle cx="370" cy="70" r="5" class="chart-point" title="Sex: $2,100"></circle>
-                <circle cx="460" cy="90" r="5" class="chart-point" title="Sáb: $1,890"></circle>
-                <circle cx="550" cy="40" r="5" class="chart-point" title="Dom: $2,450"></circle>
+                <circle cx="10" cy="205" r="5" class="chart-point"></circle>
+                <circle cx="100" cy="205" r="5" class="chart-point"></circle>
+                <circle cx="190" cy="205" r="5" class="chart-point"></circle>
+                <circle cx="280" cy="205" r="5" class="chart-point"></circle>
+                <circle cx="370" cy="205" r="5" class="chart-point"></circle>
+                <circle cx="460" cy="205" r="5" class="chart-point"></circle>
+                <circle cx="550" cy="205" r="5" class="chart-point"></circle>
               </svg>
             </div>
             <div class="chart-labels-x">
@@ -1167,7 +1168,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-weight: 900; font-size: 20px; color: var(--color-rust);">$</span>
-              <input type="number" id="input-bundle-price" class="form-control" style="width: 100px; font-weight: 700; font-family: var(--font-numeric);" value="9.99" step="0.01">
+              <input type="number" id="input-bundle-price" class="form-control" style="width: 100px; font-weight: 700; font-family: var(--font-numeric);" step="0.01">
             </div>
           </div>
 
@@ -1178,15 +1179,15 @@
               <h3>Recipe 1: Heal Your Body</h3>
               <div class="form-group">
                 <label>Título da Seção</label>
-                <input type="text" id="recipe1-title" class="form-control" value="Heal Your Body Without A Single Prescription">
+                <input type="text" id="recipe1-title" class="form-control">
               </div>
               <div class="form-group">
                 <label>Preço Individual ($)</label>
-                <input type="number" id="recipe1-price" class="form-control" value="37.00" step="1">
+                <input type="number" id="recipe1-price" class="form-control" step="1">
               </div>
               <div class="form-group">
                 <label>Descrição</label>
-                <textarea id="recipe1-desc" class="form-control">Remédios naturais que substituem receitas caras. Inclui limpeza renal, do fígado, intestino e circulação.</textarea>
+                <textarea id="recipe1-desc" class="form-control"></textarea>
               </div>
             </div>
 
@@ -1195,15 +1196,15 @@
               <h3>Recipe 2: Look Younger</h3>
               <div class="form-group">
                 <label>Título da Seção</label>
-                <input type="text" id="recipe2-title" class="form-control" value="Look Younger Without Expensive Treatments">
+                <input type="text" id="recipe2-title" class="form-control">
               </div>
               <div class="form-group">
                 <label>Preço Individual ($)</label>
-                <input type="number" id="recipe2-price" class="form-control" value="37.00" step="1">
+                <input type="number" id="recipe2-price" class="form-control" step="1">
               </div>
               <div class="form-group">
                 <label>Descrição</label>
-                <textarea id="recipe2-desc" class="form-control">Remédios para clareamento dental, redução de manchas escuras na pele, crescimento de cabelo e áreas escuras corporais.</textarea>
+                <textarea id="recipe2-desc" class="form-control"></textarea>
               </div>
             </div>
 
@@ -1212,15 +1213,15 @@
               <h3>Recipe 3: Restore Permanence</h3>
               <div class="form-group">
                 <label>Título da Seção</label>
-                <input type="text" id="recipe3-title" class="form-control" value="Restore What The Industry Said Was Permanent">
+                <input type="text" id="recipe3-title" class="form-control">
               </div>
               <div class="form-group">
                 <label>Preço Individual ($)</label>
-                <input type="number" id="recipe3-price" class="form-control" value="23.00" step="1">
+                <input type="number" id="recipe3-price" class="form-control" step="1">
               </div>
               <div class="form-group">
                 <label>Descrição</label>
-                <textarea id="recipe3-desc" class="form-control">Varizes, tornozelo inchado, inchaço matinal no rosto e tratamento natural de estrias.</textarea>
+                <textarea id="recipe3-desc" class="form-control"></textarea>
               </div>
             </div>
           </div>
@@ -1271,17 +1272,17 @@
           <div class="form-row">
             <div class="form-group">
               <label>Chave Pública Stripe (API Key)</label>
-              <input type="text" id="setting-stripe-pub" class="form-control" placeholder="pk_live_..." value="pk_live_51NzkGjL2s... (Conectado)">
+              <input type="text" id="setting-stripe-pub" class="form-control" placeholder="pk_live_...">
             </div>
             <div class="form-group">
               <label>Chave Privada Stripe (Secret Key)</label>
-              <input type="password" id="setting-stripe-sec" class="form-control" value="••••••••••••••••••••••••">
+              <input type="password" id="setting-stripe-sec" class="form-control" placeholder="Chave secreta">
             </div>
           </div>
 
           <div class="form-group">
             <label>URL do Webhook (LeadConnector / GoHighLevel Sync)</label>
-            <input type="text" id="setting-webhook" class="form-control" value="https://services.leadconnectorhq.com/hooks/v2/workflows/trigger/OFERTA_ORGANICA">
+            <input type="text" id="setting-webhook" class="form-control" placeholder="https://...">
           </div>
 
           <div class="form-row">
@@ -1295,7 +1296,7 @@
             </div>
             <div class="form-group">
               <label>E-mail Remetente</label>
-              <input type="email" id="setting-email-sender" class="form-control" value="maya@antigasremedios.com">
+              <input type="email" id="setting-email-sender" class="form-control" placeholder="contato@seudominio.com">
             </div>
           </div>
 
@@ -1363,424 +1364,13 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">Fechar</button>
-        <button class="btn btn-primary btn-sm" id="btn-modal-resend" onclick="simulateResendFromModal()"><i class="fa-solid fa-envelope"></i> Reenviar Livro</button>
+        <button class="btn btn-primary btn-sm" id="btn-modal-resend" onclick="queueResendFromModal()"><i class="fa-solid fa-envelope"></i> Reenviar Livro</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // MOCK DATA FOR TRANSACTIONS / ORDERS
-    let orders = [
-      { id: "ML-94281", name: "Ana Clara Souza", email: "anaclara@hotmail.com", date: "19/07/2026 15:12", amount: 9.99, status: "success" },
-      { id: "ML-94280", name: "Carlos Eduardo", email: "carlosedu@gmail.com", date: "19/07/2026 14:48", amount: 9.99, status: "success" },
-      { id: "ML-94279", name: "Mariana Costa", email: "maricosta@yahoo.com.br", date: "19/07/2026 14:02", amount: 9.99, status: "success" },
-      { id: "ML-94278", name: "Ricardo Santos", email: "ricardo.santos@outlook.com", date: "19/07/2026 13:55", amount: 9.99, status: "failed" },
-      { id: "ML-94277", name: "Fernanda Lima", email: "ferlima@gmail.com", date: "19/07/2026 13:21", amount: 9.99, status: "success" },
-      { id: "ML-94276", name: "Guilherme M.", email: "guimartins@gmail.com", date: "19/07/2026 12:05", amount: 9.99, status: "pending" },
-      { id: "ML-94275", name: "Beatriz Oliveira", email: "beatriz_ol@gmail.com", date: "19/07/2026 11:34", amount: 9.99, status: "success" },
-      { id: "ML-94274", name: "Luís Fernando", email: "luis.fer@gmail.com", date: "19/07/2026 10:15", amount: 9.99, status: "success" },
-      { id: "ML-94273", name: "Aline Pereira", email: "alinep@yahoo.com", date: "19/07/2026 09:42", amount: 9.99, status: "failed" }
-    ];
-
-    // TAB NAVEGATION SPA
-    const menuItems = document.querySelectorAll('.menu-item');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const pageTitleText = document.getElementById('page-title-text');
-
-    menuItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const tabId = item.getAttribute('data-tab');
-        switchTab(tabId);
-      });
-    });
-
-    function switchTab(tabId) {
-      menuItems.forEach(el => el.classList.remove('active'));
-      tabContents.forEach(el => el.classList.remove('active'));
-
-      const selectedMenuItem = document.querySelector(`.menu-item[data-tab="${tabId}"]`);
-      const selectedTabContent = document.getElementById(`tab-${tabId}`);
-      
-      if (selectedMenuItem && selectedTabContent) {
-        selectedMenuItem.classList.add('active');
-        selectedTabContent.classList.add('active');
-        
-        // Define page title text
-        let titleText = 'Visão Geral';
-        if (tabId === 'orders') titleText = 'Pedidos & Vendas';
-        if (tabId === 'products') titleText = 'Produtos & Ofertas';
-        if (tabId === 'customers') titleText = 'Gerenciamento de Clientes';
-        if (tabId === 'settings') titleText = 'Configurações do Funil';
-        pageTitleText.innerText = titleText;
-      }
-
-      // Close mobile sidebar if open
-      document.getElementById('sidebar').classList.remove('open');
-    }
-
-    // MOBILE SIDEBAR TOGGLE
-    document.getElementById('menu-toggle').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.add('open');
-    });
-
-    document.addEventListener('click', (e) => {
-      const sidebar = document.getElementById('sidebar');
-      const toggleBtn = document.getElementById('menu-toggle');
-      if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
-        sidebar.classList.remove('open');
-      }
-    });
-
-    // DYNAMIC LIVE VISITOR COUNTER
-    let liveCount = 27;
-    setInterval(() => {
-      const delta = Math.floor(Math.random() * 5) - 2; // change by -2 to +2
-      liveCount = Math.max(12, liveCount + delta);
-      document.getElementById('live-counter').innerText = liveCount;
-    }, 4000);
-
-    // TOAST SYSTEM
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toast-message');
-      toastMsg.innerText = message;
-      
-      if (type === 'success') {
-        toast.style.backgroundColor = '#1B6B3A';
-      } else {
-        toast.style.backgroundColor = '#CE372E';
-      }
-
-      toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-
-    // RENDER FUNCTIONS
-    function renderRecentOrders() {
-      const tbody = document.querySelector('#recent-orders-table tbody');
-      tbody.innerHTML = '';
-      
-      // Get first 5 success/pending orders
-      const recent = orders.slice(0, 5);
-      
-      recent.forEach(order => {
-        let statusText = 'Entregue';
-        let statusClass = 'success';
-        if (order.status === 'pending') { statusText = 'Pendente'; statusClass = 'pending'; }
-        if (order.status === 'failed') { statusText = 'Falhou'; statusClass = 'failed'; }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>
-            <div style="font-weight:700;">${order.name}</div>
-            <div style="font-size:12px; color:var(--text-muted);">${order.email}</div>
-          </td>
-          <td style="font-family:var(--font-numeric); font-weight:700;">$${order.amount.toFixed(2)}</td>
-          <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function renderOrdersTable() {
-      const tbody = document.querySelector('#orders-table tbody');
-      tbody.innerHTML = '';
-
-      const query = document.getElementById('order-search').value.toLowerCase();
-      const statusFilter = document.getElementById('order-status-filter').value;
-
-      orders.forEach(order => {
-        const matchesSearch = order.email.toLowerCase().includes(query) || order.name.toLowerCase().includes(query) || order.id.toLowerCase().includes(query);
-        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-
-        if (matchesSearch && matchesStatus) {
-          let statusText = 'Entregue';
-          let statusClass = 'success';
-          if (order.status === 'pending') { statusText = 'Pendente'; statusClass = 'pending'; }
-          if (order.status === 'failed') { statusText = 'Falhou'; statusClass = 'failed'; }
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="font-family:var(--font-numeric); font-weight:700; color:var(--color-rust);">${order.id}</td>
-            <td>
-              <div style="font-weight:700;">${order.name}</div>
-              <div style="font-size:12px; color:var(--text-muted);">${order.email}</div>
-            </td>
-            <td>${order.date}</td>
-            <td style="font-family:var(--font-numeric); font-weight:700;">$${order.amount.toFixed(2)}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            <td style="text-align: right;">
-              <button class="btn-icon-only" onclick="openOrderDetails('${order.id}')" title="Ver Detalhes"><i class="fa-solid fa-eye"></i></button>
-              <button class="btn-icon-only" onclick="simulateResendEmail('${order.id}')" title="Reenviar E-book"><i class="fa-solid fa-paper-plane"></i></button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        }
-      });
-    }
-
-    function renderCustomersTable() {
-      const tbody = document.querySelector('#customers-table tbody');
-      tbody.innerHTML = '';
-
-      const query = document.getElementById('customer-search').value.toLowerCase();
-
-      // Extract unique customers
-      let customerMap = new Map();
-      orders.forEach(order => {
-        if (!customerMap.has(order.email)) {
-          customerMap.set(order.email, {
-            name: order.name,
-            email: order.email,
-            purchases: order.status === 'success' ? 1 : 0,
-            sent: order.status === 'success'
-          });
-        } else {
-          let existing = customerMap.get(order.email);
-          if (order.status === 'success') {
-            existing.purchases += 1;
-            existing.sent = true;
-          }
-        }
-      });
-
-      customerMap.forEach(cust => {
-        const matchesSearch = cust.email.toLowerCase().includes(query) || cust.name.toLowerCase().includes(query);
-
-        if (matchesSearch) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="font-weight:700;">${cust.name}</td>
-            <td style="color:var(--text-muted);">${cust.email}</td>
-            <td style="font-family:var(--font-numeric); font-weight:700; text-align:center; width: 120px;">${cust.purchases}</td>
-            <td style="width: 180px;"><span class="status-badge ${cust.sent ? 'success' : 'failed'}">${cust.sent ? 'Sim (Entregue)' : 'Não'}</span></td>
-            <td style="text-align: right;">
-              <button class="btn btn-secondary btn-sm" onclick="simulateResendEmailDirect(this, '${cust.email}')"><i class="fa-solid fa-envelope"></i> Reenviar Livro</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        }
-      });
-    }
-
-    // MODAL FUNCTIONS
-    let currentSelectedOrderId = null;
-
-    function openOrderDetails(orderId) {
-      const order = orders.find(o => o.id === orderId);
-      if (!order) return;
-
-      currentSelectedOrderId = orderId;
-      document.getElementById('modal-order-id').innerText = `Detalhes do Pedido ${order.id}`;
-      document.getElementById('modal-client-name').innerText = order.name;
-      document.getElementById('modal-client-email').innerText = order.email;
-      document.getElementById('modal-order-date').innerText = order.date;
-      document.getElementById('modal-order-total').innerText = `$${order.amount.toFixed(2)}`;
-      
-      const btnModalResend = document.getElementById('btn-modal-resend');
-      btnModalResend.innerHTML = '<i class="fa-solid fa-envelope"></i> Reenviar Livro';
-      btnModalResend.disabled = order.status !== 'success';
-      
-      document.getElementById('order-modal').classList.add('show');
-    }
-
-    function closeModal() {
-      document.getElementById('order-modal').classList.remove('show');
-    }
-
-    // SIMULATED ACTIONS
-    function simulateResendEmail(orderId) {
-      const order = orders.find(o => o.id === orderId);
-      if (!order) return;
-      if (order.status !== 'success') {
-        showToast("Não é possível enviar o livro de um pedido pendente ou com falha.", "error");
-        return;
-      }
-      showToast(`E-book reenviado com sucesso para ${order.email}!`);
-    }
-
-    function simulateResendEmailDirect(btn, email) {
-      const oldHtml = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-      btn.disabled = true;
-      
-      setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Enviado!';
-        btn.style.backgroundColor = 'var(--color-green-light)';
-        btn.style.color = 'var(--color-green)';
-        showToast(`E-book enviado para ${email}!`);
-        
-        setTimeout(() => {
-          btn.innerHTML = oldHtml;
-          btn.disabled = false;
-          btn.style.backgroundColor = '';
-          btn.style.color = '';
-        }, 2000);
-      }, 1200);
-    }
-
-    function simulateResendFromModal() {
-      if (!currentSelectedOrderId) return;
-      const order = orders.find(o => o.id === currentSelectedOrderId);
-      if (!order) return;
-      
-      const btn = document.getElementById('btn-modal-resend');
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-      btn.disabled = true;
-
-      setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> E-book Reenviado!';
-        showToast(`E-book enviado para ${order.email}!`);
-        setTimeout(() => {
-          closeModal();
-        }, 1000);
-      }, 1200);
-    }
-
-    // LOCAL STORAGE AND PRODUCTS LOGIC
-    function loadProductsForm() {
-      if (localStorage.getItem('recipe1_title')) {
-        document.getElementById('recipe1-title').value = localStorage.getItem('recipe1_title');
-        document.getElementById('recipe1-price').value = localStorage.getItem('recipe1_price');
-        document.getElementById('recipe1-desc').value = localStorage.getItem('recipe1_desc');
-        
-        document.getElementById('recipe2-title').value = localStorage.getItem('recipe2_title');
-        document.getElementById('recipe2-price').value = localStorage.getItem('recipe2_price');
-        document.getElementById('recipe2-desc').value = localStorage.getItem('recipe2_desc');
-        
-        document.getElementById('recipe3-title').value = localStorage.getItem('recipe3_title');
-        document.getElementById('recipe3-price').value = localStorage.getItem('recipe3_price');
-        document.getElementById('recipe3-desc').value = localStorage.getItem('recipe3_desc');
-        
-        document.getElementById('input-bundle-price').value = localStorage.getItem('bundle_price');
-      }
-      updateDashboardStats();
-    }
-
-    function saveProductsForm() {
-      const r1_t = document.getElementById('recipe1-title').value;
-      const r1_p = document.getElementById('recipe1-price').value;
-      const r1_d = document.getElementById('recipe1-desc').value;
-
-      const r2_t = document.getElementById('recipe2-title').value;
-      const r2_p = document.getElementById('recipe2-price').value;
-      const r2_d = document.getElementById('recipe2-desc').value;
-
-      const r3_t = document.getElementById('recipe3-title').value;
-      const r3_p = document.getElementById('recipe3-price').value;
-      const r3_d = document.getElementById('recipe3-desc').value;
-
-      const bundle_p = document.getElementById('input-bundle-price').value;
-
-      localStorage.setItem('recipe1_title', r1_t);
-      localStorage.setItem('recipe1_price', r1_p);
-      localStorage.setItem('recipe1_desc', r1_d);
-
-      localStorage.setItem('recipe2_title', r2_t);
-      localStorage.setItem('recipe2_price', r2_p);
-      localStorage.setItem('recipe2_desc', r2_d);
-
-      localStorage.setItem('recipe3_title', r3_t);
-      localStorage.setItem('recipe3_price', r3_p);
-      localStorage.setItem('recipe3_desc', r3_d);
-
-      localStorage.setItem('bundle_price', bundle_p);
-
-      showToast("Configuração das ofertas salva com sucesso!");
-      updateDashboardStats();
-    }
-
-    function resetProductsForm() {
-      // Clear local storage and reload standard values
-      localStorage.removeItem('recipe1_title');
-      localStorage.removeItem('recipe1_price');
-      localStorage.removeItem('recipe1_desc');
-      localStorage.removeItem('recipe2_title');
-      localStorage.removeItem('recipe2_price');
-      localStorage.removeItem('recipe2_desc');
-      localStorage.removeItem('recipe3_title');
-      localStorage.removeItem('recipe3_price');
-      localStorage.removeItem('recipe3_desc');
-      localStorage.removeItem('bundle_price');
-
-      document.getElementById('recipe1-title').value = "Heal Your Body Without A Single Prescription";
-      document.getElementById('recipe1-price').value = "37.00";
-      document.getElementById('recipe1-desc').value = "Remédios naturais que substituem receitas caras. Inclui limpeza renal, do fígado, intestino e circulação.";
-
-      document.getElementById('recipe2-title').value = "Look Younger Without Expensive Treatments";
-      document.getElementById('recipe2-price').value = "37.00";
-      document.getElementById('recipe2-desc').value = "Remédios para clareamento dental, redução de manchas escuras na pele, crescimento de cabelo e áreas escuras corporais.";
-
-      document.getElementById('recipe3-title').value = "Restore What The Industry Said Was Permanent";
-      document.getElementById('recipe3-price').value = "23.00";
-      document.getElementById('recipe3-desc').value = "Varizes, tornozelo inchado, inchaço matinal no rosto e tratamento natural de estrias.";
-
-      document.getElementById('input-bundle-price').value = "9.99";
-
-      showToast("Valores padrões restaurados.");
-      updateDashboardStats();
-    }
-
-    function updateDashboardStats() {
-      const bundlePrice = parseFloat(localStorage.getItem('bundle_price') || '9.99');
-      // Recalculate total sales and revenue based on mock count
-      const totalSales = 360000;
-      const totalRevenue = totalSales * bundlePrice;
-      
-      // Formatting revenue to have commas
-      const formattedRevenue = "$" + totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      document.getElementById('stat-revenue').innerText = formattedRevenue;
-      document.getElementById('stat-sales').innerText = totalSales.toLocaleString('en-US') + "+";
-    }
-
-    // SETTINGS LOGIC
-    function loadSettings() {
-      if (localStorage.getItem('setting_stripe_pub')) {
-        document.getElementById('setting-stripe-pub').value = localStorage.getItem('setting_stripe_pub');
-        document.getElementById('setting-stripe-sec').value = localStorage.getItem('setting_stripe_sec');
-        document.getElementById('setting-webhook').value = localStorage.getItem('setting_webhook');
-        document.getElementById('setting-email-provider').value = localStorage.getItem('setting_email_provider');
-        document.getElementById('setting-email-sender').value = localStorage.getItem('setting_email_sender');
-      }
-    }
-
-    function saveSettings() {
-      const stripe_pub = document.getElementById('setting-stripe-pub').value;
-      const stripe_sec = document.getElementById('setting-stripe-sec').value;
-      const webhook = document.getElementById('setting-webhook').value;
-      const provider = document.getElementById('setting-email-provider').value;
-      const sender = document.getElementById('setting-email-sender').value;
-
-      localStorage.setItem('setting_stripe_pub', stripe_pub);
-      localStorage.setItem('setting_stripe_sec', stripe_sec);
-      localStorage.setItem('setting_webhook', webhook);
-      localStorage.setItem('setting_email_provider', provider);
-      localStorage.setItem('setting_email_sender', sender);
-
-      showToast("Configurações do funil salvas com sucesso!");
-    }
-
-    // SEARCH & FILTER INPUT EVENTS
-    document.getElementById('order-search').addEventListener('input', renderOrdersTable);
-    document.getElementById('order-status-filter').addEventListener('change', renderOrdersTable);
-    document.getElementById('customer-search').addEventListener('input', renderCustomersTable);
-
-    // ON DOM LOADED
-    window.addEventListener('DOMContentLoaded', () => {
-      loadProductsForm();
-      loadSettings();
-      renderRecentOrders();
-      renderOrdersTable();
-      renderCustomersTable();
-      
-      // Delay chart line drawing to execute CSS animation smoothly
-      setTimeout(() => {
-        const chartLine = document.querySelector('.chart-line');
-        if (chartLine) chartLine.style.strokeDashoffset = '0';
-      }, 200);
-    });
-  </script>
+  <script src="supabase-config.js"></script>
+  <script src="db-client.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>

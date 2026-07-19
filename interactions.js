@@ -157,9 +157,27 @@
   const submit = order && order.querySelector(".form-btn");
   const terms = order && order.querySelector("#terms-conditions-input");
   const fields = order ? Array.from(order.querySelectorAll("input[name], select[name]")) : [];
+  const databaseReady = Boolean(window.OfferDB && OfferDB.configured());
+  let visitorSession = sessionStorage.getItem("oferta-organica-visitor-session");
+  if (!visitorSession && window.crypto && crypto.randomUUID) {
+    visitorSession = crypto.randomUUID();
+    sessionStorage.setItem("oferta-organica-visitor-session", visitorSession);
+  }
+
+  function recordEvent(type) {
+    if (!databaseReady || !visitorSession) return Promise.resolve();
+    return OfferDB.insert("site_events", [{ session_id: visitorSession, event_type: type, path: location.pathname }], false).catch(function () {});
+  }
+
+  if (databaseReady && visitorSession) {
+    recordEvent("page_view");
+    recordEvent("heartbeat");
+    setInterval(function () { recordEvent("heartbeat"); }, 60000);
+  }
 
   function scrollToOrder() {
     if (!order) return;
+    recordEvent("checkout_click");
     order.scrollIntoView({ behavior: "smooth", block: "center" });
     setTimeout(function () { if (fields[0]) fields[0].focus({ preventScroll: true }); }, 650);
   }
@@ -224,15 +242,44 @@
 
   if (submit) {
     submit.type = "button";
-    submit.addEventListener("click", function () {
+    submit.addEventListener("click", async function () {
       if (!validate(true)) {
         setMessage("Preencha todos os campos e aceite os termos para continuar.", true);
         const invalid = fields.find(function (field) { return !fieldIsValid(field); });
         if (invalid) invalid.focus();
         return;
       }
+      if (!databaseReady) {
+        setMessage("O banco de dados ainda não foi configurado. Tente novamente em instantes.", true);
+        return;
+      }
+      submit.disabled = true;
+      setMessage("Registrando seu pedido com segurança...", false);
+      const values = {};
+      fields.forEach(function (field) { values[field.name] = field.value.trim(); });
+      try {
+        const bundleRows = await OfferDB.select("offers", "select=price&slug=eq.bundle&active=eq.true", false);
+        if (!bundleRows.length) throw new Error("Oferta indisponível.");
+        await OfferDB.insert("orders", [{
+          customer_name: values.name,
+          email: values.email,
+          phone: values.phone,
+          address: values.address,
+          city: values.city,
+          country: values.country,
+          zipcode: values.zipcode,
+          session_id: visitorSession,
+          amount: Number(bundleRows[0].price),
+          status: "pending"
+        }], false);
+      } catch (error) {
+        setMessage("Não foi possível registrar o pedido. Verifique os dados e tente novamente.", true);
+        submit.disabled = false;
+        return;
+      }
       if (!checkoutUrl) {
         setMessage("Seus dados são válidos. O link de pagamento ainda precisa ser configurado.", true);
+        submit.disabled = false;
         return;
       }
       const target = new URL(checkoutUrl, location.href);
