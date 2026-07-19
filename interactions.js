@@ -18,6 +18,13 @@
     button.type = "button";
     button.addEventListener("click", scrollToOrder);
   });
+  const popupTrigger = document.querySelector("#willakane-popup-trigger");
+  if (popupTrigger) {
+    popupTrigger.addEventListener("click", function (event) {
+      event.preventDefault();
+      scrollToOrder();
+    });
+  }
 
   function setMessage(text, error) {
     if (!body) return;
@@ -151,11 +158,17 @@
   });
   if (steps.length) selectStep(0);
 
-  const minutes = document.querySelector(".wadesfarm-bot-mins-val");
-  const seconds = document.querySelector(".wadesfarm-bot-secs-val");
-  if (minutes && seconds) {
-    const initialSeconds = Math.max(0, (parseInt(minutes.textContent, 10) || 0) * 60 + (parseInt(seconds.textContent, 10) || 0));
-    const storageKey = "maya-lin-offer-deadline";
+  function activateTimer(config) {
+    const hours = config.hours && document.querySelector(config.hours);
+    const minutes = document.querySelector(config.minutes);
+    const seconds = document.querySelector(config.seconds);
+    if (!minutes || !seconds) return;
+    const initialSeconds = Math.max(0,
+      (hours ? parseInt(hours.textContent, 10) || 0 : 0) * 3600 +
+      (parseInt(minutes.textContent, 10) || 0) * 60 +
+      (parseInt(seconds.textContent, 10) || 0)
+    );
+    const storageKey = config.storageKey;
     let deadline = Number(sessionStorage.getItem(storageKey));
     if (!deadline || deadline < Date.now()) {
       deadline = Date.now() + initialSeconds * 1000;
@@ -163,11 +176,23 @@
     }
     function updateTimer() {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      minutes.textContent = String(Math.floor(remaining / 60)).padStart(2, "0");
+      if (hours) hours.textContent = String(Math.floor(remaining / 3600)).padStart(2, "0");
+      minutes.textContent = String(Math.floor((remaining % 3600) / 60)).padStart(2, "0");
       seconds.textContent = String(remaining % 60).padStart(2, "0");
       if (!remaining) clearInterval(timerInterval);
     }
     const timerInterval = setInterval(updateTimer, 1000);
     updateTimer();
   }
+  activateTimer({
+    minutes: ".wadesfarm-bot-mins-val",
+    seconds: ".wadesfarm-bot-secs-val",
+    storageKey: "maya-lin-offer-deadline-bottom"
+  });
+  activateTimer({
+    hours: ".willakane-hero-hrs",
+    minutes: ".willakane-hero-mins",
+    seconds: ".willakane-hero-secs",
+    storageKey: "maya-lin-offer-deadline-hero"
+  });
 })();
