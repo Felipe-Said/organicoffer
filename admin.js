@@ -228,8 +228,6 @@
   async function loadSettings() {
     const rows = await OfferDB.select("app_settings", "select=*&key=eq.funnel", true);
     const value = rows[0] ? rows[0].value : {};
-    document.getElementById("setting-stripe-pub").value = value.stripe_publishable_key || "";
-    document.getElementById("setting-stripe-sec").value = value.stripe_secret_key || "";
     document.getElementById("setting-webhook").value = value.webhook_url || "";
     document.getElementById("setting-email-provider").value = value.email_provider || "leadconnector";
     document.getElementById("setting-email-sender").value = value.email_sender || "";
@@ -237,8 +235,6 @@
 
   async function saveSettings() {
     const row = { key: "funnel", value: {
-      stripe_publishable_key: document.getElementById("setting-stripe-pub").value.trim(),
-      stripe_secret_key: document.getElementById("setting-stripe-sec").value.trim(),
       webhook_url: document.getElementById("setting-webhook").value.trim(),
       email_provider: document.getElementById("setting-email-provider").value,
       email_sender: document.getElementById("setting-email-sender").value.trim()
@@ -247,10 +243,38 @@
     catch (error) { showToast(error.message, "error"); }
   }
 
+  async function loadGatewaySettings() {
+    const rows = await OfferDB.select("app_settings", "select=*&key=eq.payment_gateway", true);
+    const value = rows[0] ? rows[0].value : {};
+    document.getElementById("gateway-provider").value = value.provider || "stripe";
+    document.getElementById("gateway-mode").value = value.checkout_mode || "payment";
+    document.getElementById("gateway-payment-price").value = value.payment_price_id || "";
+    document.getElementById("gateway-subscription-price").value = value.subscription_price_id || "";
+  }
+
+  async function saveGatewaySettings() {
+    const button = document.getElementById("save-gateway-button");
+    const mode = document.getElementById("gateway-mode").value;
+    const paymentPrice = document.getElementById("gateway-payment-price").value.trim();
+    const subscriptionPrice = document.getElementById("gateway-subscription-price").value.trim();
+    if (mode === "payment" && !/^price_/.test(paymentPrice)) return showToast("Informe um Price ID válido para pagamento único.", "error");
+    if (mode === "subscription" && !/^price_/.test(subscriptionPrice)) return showToast("Informe um Price ID válido para assinatura.", "error");
+    const row = { key: "payment_gateway", value: {
+      provider: "stripe",
+      checkout_mode: mode,
+      payment_price_id: paymentPrice,
+      subscription_price_id: subscriptionPrice
+    }, updated_at: new Date().toISOString() };
+    button.disabled = true;
+    try { await OfferDB.upsert("app_settings", [row], "key", true); showToast("Gateway Stripe salvo no banco."); }
+    catch (error) { showToast(error.message, "error"); }
+    finally { button.disabled = false; }
+  }
+
   function switchTab(tabId) {
     document.querySelectorAll(".menu-item").forEach(function (item) { item.classList.toggle("active", item.dataset.tab === tabId); });
     document.querySelectorAll(".tab-content").forEach(function (tab) { tab.classList.toggle("active", tab.id === "tab-" + tabId); });
-    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", settings: "Configurações do Funil" };
+    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", settings: "Configurações do Funil" };
     document.getElementById("page-title-text").textContent = titles[tabId] || "Painel";
     document.getElementById("sidebar").classList.remove("open");
   }
@@ -274,7 +298,7 @@
       document.getElementById("order-search").addEventListener("input", renderOrdersTable);
       document.getElementById("order-status-filter").addEventListener("change", renderOrdersTable);
       document.getElementById("customer-search").addEventListener("input", renderCustomersTable);
-      await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings()]);
+      await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings()]);
     } catch (error) { showToast(error.message, "error"); }
   }
 
@@ -282,6 +306,7 @@
   window.saveProductsForm = saveProductsForm;
   window.resetProductsForm = loadProductsForm;
   window.saveSettings = saveSettings;
+  window.saveGatewaySettings = saveGatewaySettings;
   window.closeModal = closeModal;
   window.queueResendFromModal = queueResendFromModal;
   window.logoutAdmin = async function () { await OfferDB.auth.signOut(); location.replace("login.html"); };

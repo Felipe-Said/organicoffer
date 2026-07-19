@@ -24,6 +24,10 @@ create table if not exists public.orders (
   currency text not null default 'USD',
   status text not null default 'pending' check (status in ('pending','success','failed','refunded')),
   payment_reference text,
+  billing_type text not null default 'payment' check (billing_type in ('payment','subscription')),
+  stripe_customer_id text,
+  stripe_subscription_id text,
+  subscription_status text,
   ebook_sent_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -76,7 +80,10 @@ insert into public.offers(slug,title,description,price,sort_order) values
 on conflict (slug) do nothing;
 
 insert into public.app_settings(key,value) values
-('funnel',jsonb_build_object('stripe_publishable_key','','stripe_secret_key','','webhook_url','','email_provider','leadconnector','email_sender',''))
+('funnel',jsonb_build_object('webhook_url','','email_provider','leadconnector','email_sender',''))
+on conflict (key) do nothing;
+insert into public.app_settings(key,value) values
+('payment_gateway',jsonb_build_object('provider','stripe','checkout_mode','payment','payment_price_id','','subscription_price_id',''))
 on conflict (key) do nothing;
 
 create or replace function public.is_admin()

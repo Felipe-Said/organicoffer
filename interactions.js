@@ -151,7 +151,6 @@
 
   translatePage();
 
-  const checkoutUrl = document.documentElement.dataset.checkoutUrl || "";
   const order = document.querySelector(".container-order-form-two-step");
   const body = order && order.querySelector(".form-body");
   const submit = order && order.querySelector(".form-btn");
@@ -249,42 +248,23 @@
         if (invalid) invalid.focus();
         return;
       }
-      if (!databaseReady) {
-        setMessage("O banco de dados ainda não foi configurado. Tente novamente em instantes.", true);
-        return;
-      }
       submit.disabled = true;
-      setMessage("Registrando seu pedido com segurança...", false);
+      setMessage("Abrindo o pagamento seguro da Stripe...", false);
       const values = {};
       fields.forEach(function (field) { values[field.name] = field.value.trim(); });
       try {
-        const bundleRows = await OfferDB.select("offers", "select=price&slug=eq.bundle&active=eq.true", false);
-        if (!bundleRows.length) throw new Error("Oferta indisponível.");
-        await OfferDB.insert("orders", [{
-          customer_name: values.name,
-          email: values.email,
-          phone: values.phone,
-          address: values.address,
-          city: values.city,
-          country: values.country,
-          zipcode: values.zipcode,
-          session_id: visitorSession,
-          amount: Number(bundleRows[0].price),
-          status: "pending"
-        }], false);
+        const response = await fetch("/api/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(Object.assign({}, values, { session_id: visitorSession }))
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.url) throw new Error(payload.error || "Não foi possível abrir o checkout.");
+        location.assign(payload.url);
       } catch (error) {
-        setMessage("Não foi possível registrar o pedido. Verifique os dados e tente novamente.", true);
+        setMessage(error.message || "Não foi possível iniciar o pagamento. Tente novamente.", true);
         submit.disabled = false;
-        return;
       }
-      if (!checkoutUrl) {
-        setMessage("Seus dados são válidos. O link de pagamento ainda precisa ser configurado.", true);
-        submit.disabled = false;
-        return;
-      }
-      const target = new URL(checkoutUrl, location.href);
-      fields.forEach(function (field) { target.searchParams.set(field.name, field.value.trim()); });
-      location.assign(target.toString());
     });
   }
   validate(false);
