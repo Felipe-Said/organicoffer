@@ -1,6 +1,156 @@
 (function () {
   "use strict";
 
+  function translatePage() {
+    const translations = new Map([
+      ["Maya Lin's Natural Remedy Book", "Livro de Remédios Naturais de Maya Lin"],
+      ["PEOPLE HEALING WITHOUT EXPENSIVE PRESCRIPTIONS & DENTAL BILLS", "PESSOAS SE CUIDANDO SEM RECEITAS CARAS E CONTAS DE DENTISTA"],
+      ["GET MAYA LIN'S ANCIENT REMEDY BOOK TODAY FOR 90% OFF", "ADQUIRA HOJE O LIVRO DE REMÉDIOS ANTIGOS DE MAYA LIN COM 90% DE DESCONTO"],
+      ["53 ANCIENT REMEDIES FROM 50+ YEARS OF HOLISTIC HEALING PRACTICE", "53 REMÉDIOS ANTIGOS REUNIDOS EM MAIS DE 50 ANOS DE PRÁTICA HOLÍSTICA"],
+      ["Why The Dental Industry And Big Pharma Are Trying To Shut Down Maya Lin's Ancient Remedies", "Por que a indústria odontológica e as grandes farmacêuticas tentam silenciar os remédios antigos de Maya Lin"],
+      ["Grab Maya Lin's Ancient Remedy Book: From Yellow Teeth, Varicose Veins & Gut Issues To Feeling Better Than You Have In Years — Using Ingredients Already In Your Kitchen.", "Conheça o Livro de Remédios Antigos de Maya Lin: de dentes amarelados, varizes e problemas intestinais a uma sensação de bem-estar que você não sentia há anos — usando ingredientes que já estão na sua cozinha."],
+      ["Get My Ancient Remedy Book: $9.99", "Quero meu Livro de Remédios Antigos: US$ 9,99"],
+      ["Join", "Junte-se a"],
+      ["People Who Stopped Trusting Big Pharma And Started Healing With Maya Lin.", "pessoas que deixaram de confiar nas grandes farmacêuticas e começaram a se cuidar com Maya Lin."],
+      ["Secure Checkout", "Pagamento seguro"],
+      ["Instant Email Delivery", "Entrega imediata por e-mail"],
+      ["Read On Any Device", "Leia em qualquer dispositivo"],
+      ["Less than one dental visit for what the industry never fixed anyway.", "Menos que uma consulta odontológica por aquilo que a indústria nunca resolveu."],
+      ["TODAY ONLY: SAVE 90%", "SOMENTE HOJE: ECONOMIZE 90%"],
+      ["THIS 90% DISCOUNT ENDS IN:", "ESTE DESCONTO DE 90% TERMINA EM:"],
+      ["HOURS", "HORAS"], ["MINUTES", "MINUTOS"], ["SECONDS", "SEGUNDOS"],
+      ["Everything The Dental Industry And Big Pharma Don't Want You To Find Is", "Tudo o que a indústria odontológica e as grandes farmacêuticas não querem que você descubra está"],
+      ["Inside This One Book", "Neste único livro"],
+      ["Recipe 1", "Receita 1"],
+      [": Heal Your Body Without A Single Prescription", ": Cuide do seu corpo sem uma única receita médica"],
+      ["The remedies Big Pharma replaced with expensive monthly prescriptions.", "Os remédios que as grandes farmacêuticas substituíram por receitas mensais caras."],
+      ["Kidney flush remedy", "Remédio para limpeza dos rins"],
+      [": support and cleanse what your doctor said nothing could be done about", ": cuide e limpe aquilo que seu médico disse que não tinha solução"],
+      ["Liver cleanse tonic", "Tônico para limpeza do fígado"],
+      [": give your liver what 50 years of healing practice recommends from your kitchen", ": ofereça ao seu fígado o que 50 anos de prática recomendam, direto da sua cozinha"],
+      ["Gut cleanse remedy", "Remédio para limpeza intestinal"],
+      [": wipe out what has been draining your energy and your digestion for months", ": elimine o que vem prejudicando sua energia e sua digestão há meses"],
+      ["Circulation remedy", "Remédio para circulação"],
+      [": support your veins and your blood flow without a single prescription", ": cuide das veias e do fluxo sanguíneo sem uma única receita médica"],
+      ["Covers: Kidneys. Liver. Gut Health. Circulation.", "Inclui: rins, fígado, saúde intestinal e circulação."],
+      ["Value if sold separately:", "Valor se vendido separadamente:"],
+      ["Recipe 2", "Receita 2"],
+      [": Look Younger Without Expensive Treatments", ": Tenha uma aparência mais jovem sem tratamentos caros"],
+      ["The remedies the cosmetic and dental industry charges hundreds for every single year.", "Os remédios pelos quais as indústrias cosmética e odontológica cobram centenas todos os anos."],
+      ["Teeth whitening remedy", "Remédio para clareamento dos dentes"],
+      [": get your teeth white again without a single dental visit or whitening kit", ": recupere dentes mais brancos sem consulta odontológica ou kit de clareamento"],
+      ["Skin remedy", "Remédio para a pele"],
+      [": clear the bumps, the darkness, and the discoloration with what is already in your kitchen", ": reduza irregularidades, escurecimento e manchas com o que já existe na sua cozinha"],
+      ["Hair growth remedy", "Remédio para crescimento capilar"],
+      [": restore thickness and stop the thinning naturally without expensive treatments", ": recupere o volume e reduza o afinamento naturalmente, sem tratamentos caros"],
+      ["Dark underarm remedy", "Remédio para axilas escurecidas"],
+      [": clear what the cosmetic industry has been selling you creams for without results", ": cuide do que a indústria cosmética tenta tratar com cremes sem resultado"],
+      ["Covers: Teeth. Skin. Hair. Dark Spots.", "Inclui: dentes, pele, cabelo e manchas escuras."],
+      ["Recipe 3", "Receita 3"],
+      [": Restore What The Industry Said Was Permanent", ": Recupere o que a indústria disse ser permanente"],
+      ["The remedies the wellness aisle sells you at $40 a bottle without ever fixing the root.", "Os remédios vendidos por US$ 40 o frasco nas lojas de bem-estar sem nunca tratar a causa."],
+      ["Varicose vein remedy", "Remédio para varizes"],
+      [": support your circulation and reduce what has been sitting in your legs for years", ": cuide da circulação e reduza o que se acumulou nas pernas durante anos"],
+      ["Swollen ankle remedy", "Remédio para tornozelos inchados"],
+      [": bring down what your doctor said was just something to manage", ": reduza aquilo que seu médico disse que só poderia ser controlado"],
+      ["Facial puffiness remedy", "Remédio para inchaço facial"],
+      [": clear the puffiness that has been sitting on your face every morning", ": reduza o inchaço que aparece no seu rosto todas as manhãs"],
+      ["Stretch mark remedy", "Remédio para estrias"],
+      [": restore and repair what the cosmetic industry charges hundreds to treat", ": restaure e repare aquilo que a indústria cosmética cobra centenas para tratar"],
+      ["Covers: Varicose Veins. Swelling. Puffiness. Skin Repair.", "Inclui: varizes, inchaço, aparência inchada e reparação da pele."],
+      ["If You Bought Each Recipe Separately You Would", "Se você comprasse cada receita separadamente, iria"],
+      ["Pay $97.", "Pagar US$ 97."],
+      ["Today you get all three inside Maya Lin's Ancient Remedy Book.", "Hoje você recebe as três no Livro de Remédios Antigos de Maya Lin."],
+      ["$9.99 Today Only", "US$ 9,99 somente hoje"],
+      ["90% off. Every remedy. One book. Your kitchen. Tonight.", "90% de desconto. Todos os remédios. Um livro. Na sua cozinha. Hoje."],
+      ["THIS PRICE RETURNS TO $97 WHEN THE TIMER HITS ZERO.", "O PREÇO VOLTA A US$ 97 QUANDO O CONTADOR CHEGAR A ZERO."],
+      ["Join 360,000+ People Who Stopped Trusting Big Pharma And Started Healing With Maya Lin.", "Junte-se a mais de 360 mil pessoas que deixaram de confiar nas grandes farmacêuticas e começaram a se cuidar com Maya Lin."],
+      ["Where Should We Send The E-book?", "Para onde devemos enviar o e-book?"],
+      ["Save 90% By Purchasing Now!", "Economize 90% comprando agora!"],
+      ["Shipping", "Entrega"],
+      ["By completing your purchase, you agree to Maya Lin's", "Ao concluir sua compra, você concorda com os"],
+      ["Terms and Conditions and Refund Policy", "Termos e Condições e a Política de Reembolso de Maya Lin"],
+      [". Please check the box to proceed.", ". Marque a caixa para continuar."],
+      ["Go To Checkout", "Ir para o pagamento"],
+      ["We Respect Your Privacy & Information.", "Respeitamos sua privacidade e suas informações."],
+      ["Here Is How You Get Maya Lin's Ancient Remedy Book.", "Veja como receber o Livro de Remédios Antigos de Maya Lin."],
+      ["Three simple steps. That is all.", "Apenas três passos simples."],
+      ["Step 1 — Purchase", "Etapa 1 — Compra"],
+      ["Click the button and complete your order securely. Takes less than 20 seconds.", "Clique no botão e conclua seu pedido com segurança. Leva menos de 20 segundos."],
+      ["Step 2 — Check your email", "Etapa 2 — Verifique seu e-mail"],
+      ["The moment your purchase goes through I send the book straight to your inbox.", "Assim que sua compra for aprovada, o livro será enviado diretamente para sua caixa de entrada."],
+      ["Step 3 — Start healing", "Etapa 3 — Comece a se cuidar"],
+      ["Open it on your phone, tablet, or laptop. No app needed. No waiting. No shipping.", "Abra no celular, tablet ou computador. Sem aplicativo, espera ou frete."],
+      ["Got Questions? Maya Lin Has Answers.", "Tem dúvidas? Maya Lin responde."],
+      ["What exactly is Maya Lin's Ancient Remedy Book?", "O que é exatamente o Livro de Remédios Antigos de Maya Lin?"],
+      ["It is a digital book containing 53 ancient natural remedies drawn from 50+ years of holistic healing practice and ancient Chinese wellness wisdom. It covers teeth, skin, hair, kidney health, liver support, gut cleansing, circulation, varicose veins, swelling, and more. Everything is written in plain simple language using ingredients you already have at home.", "É um livro digital com 53 remédios naturais antigos, reunidos em mais de 50 anos de prática holística e sabedoria chinesa sobre bem-estar. Aborda dentes, pele, cabelo, saúde dos rins, cuidado do fígado, limpeza intestinal, circulação, varizes, inchaço e muito mais. Tudo é explicado em linguagem simples, usando ingredientes que você já tem em casa."],
+      ["Who is Maya Lin?", "Quem é Maya Lin?"],
+      ["Maya Lin is a US-based holistic healer with over 50 years of healing experience. She has spent her career studying and applying ancient Chinese wellness wisdom to the conditions that modern medicine and the dental industry have failed to fix. Maya Lin's Ancient Remedy Book is her way of putting five decades of healing knowledge into every American kitchen at a price every family can afford.", "Maya Lin é uma terapeuta holística radicada nos Estados Unidos, com mais de 50 anos de experiência. Ela dedicou sua carreira ao estudo e à aplicação da antiga sabedoria chinesa de bem-estar em situações que a medicina moderna e a indústria odontológica não conseguiram resolver. O Livro de Remédios Antigos de Maya Lin reúne cinco décadas de conhecimento por um preço acessível."],
+      ["Do these ancient remedies actually work?", "Esses remédios antigos realmente funcionam?"],
+      ["These remedies have not been in practice for 50 years because they failed. Ancient Chinese medicine has addressed these same conditions for centuries — long before the dental industry charged hundreds for whitening kits and Big Pharma put a prescription on every problem. Every remedy in this book has survived because it worked, not because someone put it on a shelf with a price tag.", "Esses remédios não seriam usados há 50 anos se não tivessem utilidade. A medicina chinesa aborda essas mesmas questões há séculos — muito antes de a indústria odontológica cobrar centenas por kits de clareamento e de as grandes farmacêuticas oferecerem uma receita para cada problema. Cada remédio deste livro atravessou gerações por seus resultados, não por ter sido colocado numa prateleira com uma etiqueta de preço."],
+      ["How do I receive the book after I purchase?", "Como recebo o livro depois da compra?"],
+      ["The moment your purchase is complete I send the book straight to your email. You can open it immediately on your phone, tablet, or laptop. No app needed. No waiting. No shipping.", "Assim que a compra for concluída, o livro será enviado diretamente para seu e-mail. Você poderá abri-lo imediatamente no celular, tablet ou computador. Sem aplicativo, espera ou frete."],
+      ["Are the ingredients expensive or hard to find?", "Os ingredientes são caros ou difíceis de encontrar?"],
+      ["No. Every single remedy in this book uses ingredients you likely already have in your kitchen. Ginger. Lemon. Garlic. Turmeric. Cinnamon. Honey. Nothing exotic. Nothing expensive. Nothing you need to order online.", "Não. Todos os remédios do livro usam ingredientes que você provavelmente já tem na cozinha: gengibre, limão, alho, cúrcuma, canela e mel. Nada exótico, caro ou que precise ser comprado pela internet."],
+      ["Is this safe to use alongside my current medication?", "É seguro usar junto com meus medicamentos atuais?"],
+      ["The remedies in this book use natural kitchen ingredients that have been used safely for centuries. However if you are currently on prescription medication I always recommend checking with a healthcare provider before making changes to your routine.", "Os remédios deste livro usam ingredientes naturais de cozinha utilizados há séculos. Entretanto, se você toma medicamentos prescritos, consulte um profissional de saúde antes de fazer mudanças na sua rotina."],
+      ["Why is the price only $9.99?", "Por que custa apenas US$ 9,99?"],
+      ["Maya Lin watched American families pay the dental industry and Big Pharma thousands of dollars for results their kitchen could deliver for free. I made a decision that this knowledge should be accessible to everyone regardless of what they can afford. That is why it is $9.99 today. This price will not last.", "Maya Lin viu famílias gastarem milhares de dólares com a indústria odontológica e as grandes farmacêuticas por resultados que poderiam vir da própria cozinha. Ela decidiu tornar esse conhecimento acessível a todos. Por isso, hoje o valor é de US$ 9,99. Esse preço é temporário."],
+      ["Why was the original price $97?", "Por que o preço original era US$ 97?"],
+      ["Because the three recipe collections inside this book are each worth between $23 and $37 if sold individually. Together they add up to $97. Right now you are getting all three for $9.99. When the timer hits zero the price returns to $97.", "Porque cada uma das três coleções de receitas do livro vale entre US$ 23 e US$ 37 quando vendida separadamente. Juntas, somam US$ 97. Agora você recebe as três por US$ 9,99. Quando o contador chegar a zero, o preço voltará a US$ 97."],
+      ["Is my payment secure?", "Meu pagamento é seguro?"],
+      ["Yes. Your payment is processed through a fully encrypted secure checkout. Your card details are never stored. Your information is never shared.", "Sim. O pagamento é processado em um ambiente seguro e totalmente criptografado. Os dados do cartão não são armazenados e suas informações não são compartilhadas."],
+      ["How quickly will I see results?", "Em quanto tempo verei resultados?"],
+      ["Many people notice a difference within days of using their first remedy. Every remedy in this book includes instructions on how and when to use it for best results. Some work best with consistency over one to two weeks.", "Muitas pessoas percebem diferenças poucos dias após usar o primeiro remédio. Cada receita inclui instruções de uso para obter os melhores resultados. Algumas exigem constância durante uma ou duas semanas."],
+      ["© Maya Lin's Natural Remedy Book. All Rights Reserved.", "© Livro de Remédios Naturais de Maya Lin. Todos os direitos reservados."],
+      ["Terms and Conditions and Refund Policy Disclaimer", "Termos e Condições, Política de Reembolso e Aviso Legal"],
+      [": This book is for educational purposes only and is not intended as medical advice.", ": Este livro tem finalidade exclusivamente educativa e não substitui orientação médica."]
+    ]);
+
+    document.title = translations.get(document.title) || document.title;
+    document.documentElement.lang = "pt-BR";
+    document.querySelectorAll("body *").forEach(function (element) {
+      if (/^(STYLE|SCRIPT|SVG|PATH|TEMPLATE)$/.test(element.tagName)) return;
+      Array.from(element.childNodes).forEach(function (node) {
+        if (node.nodeType !== 3) return;
+        const original = node.nodeValue;
+        const trimmed = original.trim();
+        let translated = translations.get(trimmed);
+        if (!translated) {
+          for (const entry of translations) {
+            if (trimmed.includes(entry[0])) {
+              translated = trimmed.replace(entry[0], entry[1]);
+              break;
+            }
+          }
+        }
+        if (translated) node.nodeValue = original.replace(trimmed, translated);
+      });
+    });
+
+    const placeholders = {
+      name: "Nome completo...", email: "Endereço de e-mail...", phone: "Telefone...",
+      address: "Endereço...", city: "Cidade...", zipcode: "CEP..."
+    };
+    Object.keys(placeholders).forEach(function (name) {
+      const field = document.querySelector("[name='" + name + "']");
+      if (field) field.placeholder = placeholders[name];
+    });
+    document.querySelectorAll("button[aria-label*='Ancient Remedy Book']").forEach(function (button) {
+      button.setAttribute("aria-label", "Quero meu Livro de Remédios Antigos por US$ 9,99");
+    });
+
+    const country = document.querySelector("select[name='country']");
+    if (country && typeof Intl.DisplayNames === "function") {
+      const names = new Intl.DisplayNames(["pt-BR"], { type: "region" });
+      Array.from(country.options).forEach(function (option) {
+        if (option.value && /^[A-Z]{2}$/.test(option.value)) option.textContent = names.of(option.value);
+      });
+    }
+  }
+
+  translatePage();
+
   const checkoutUrl = document.documentElement.dataset.checkoutUrl || "";
   const order = document.querySelector(".container-order-form-two-step");
   const body = order && order.querySelector(".form-body");
@@ -76,13 +226,13 @@
     submit.type = "button";
     submit.addEventListener("click", function () {
       if (!validate(true)) {
-        setMessage("Please complete every field and accept the terms to continue.", true);
+        setMessage("Preencha todos os campos e aceite os termos para continuar.", true);
         const invalid = fields.find(function (field) { return !fieldIsValid(field); });
         if (invalid) invalid.focus();
         return;
       }
       if (!checkoutUrl) {
-        setMessage("Your details are valid. The payment link still needs to be configured.", true);
+        setMessage("Seus dados são válidos. O link de pagamento ainda precisa ser configurado.", true);
         return;
       }
       const target = new URL(checkoutUrl, location.href);
