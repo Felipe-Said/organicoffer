@@ -87,7 +87,7 @@ insert into public.app_settings(key,value) values
 ('payment_gateway',jsonb_build_object('provider','stripe','checkout_mode','payment','payment_price_id','','subscription_price_id',''))
 on conflict (key) do nothing;
 insert into public.app_settings(key,value) values
-('delivery',jsonb_build_object('provider','resend','storage_path','','file_name','','file_size',0,'sender_name','Vovó Tereza','sender_email','','subject','Seu e-book chegou'))
+('delivery',jsonb_build_object('provider','download','storage_path','','file_name','','file_size',0))
 on conflict (key) do nothing;
 
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)

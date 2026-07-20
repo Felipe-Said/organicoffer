@@ -7,13 +7,10 @@ create unique index if not exists email_delivery_jobs_order_unique
 
 insert into public.app_settings(key,value)
 values ('delivery', jsonb_build_object(
-  'provider','resend',
+  'provider','download',
   'storage_path','',
   'file_name','',
-  'file_size',0,
-  'sender_name','Vovó Tereza',
-  'sender_email','',
-  'subject','Seu e-book chegou'
+  'file_size',0
 ))
 on conflict (key) do nothing;
 

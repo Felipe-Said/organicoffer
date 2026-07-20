@@ -1,9 +1,7 @@
 import crypto from "node:crypto";
-import { env, json, stripe, supabase } from "./_server.mjs";
-import { deliverEbook } from "./_delivery.mjs";
+import { env, json, supabase } from "./_server.mjs";
 
 export const config = { api: { bodyParser: false } };
-export const maxDuration = 60;
 
 async function rawBody(request) {
   const chunks = [];
@@ -44,14 +42,6 @@ export default async function handler(request, response) {
           subscription_status: session.subscription ? "active" : null,
           updated_at: new Date().toISOString() }
       });
-      if (orderId && paid) {
-        const delivery = await deliverEbook(orderId);
-        const metadata = new URLSearchParams();
-        metadata.append("metadata[product_type]", "digital");
-        metadata.append("metadata[fulfillment_status]", "delivered");
-        metadata.append("metadata[delivered_at]", delivery.deliveredAt || new Date().toISOString());
-        await stripe("checkout/sessions/" + encodeURIComponent(session.id), { method: "POST", body: metadata });
-      }
     }
     if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const subscription = event.data.object;

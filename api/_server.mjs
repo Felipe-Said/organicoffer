@@ -56,21 +56,21 @@ export async function storageDownload(bucket, path) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-export async function resendEmail(payload, idempotencyKey) {
-  const apiKey = env("RESEND_API_KEY");
-  if (!apiKey) throw new Error("RESEND_API_KEY não configurada na Vercel.");
-  const response = await fetch("https://api.resend.com/emails", {
+export async function storageSignedUrl(bucket, path, expiresIn = 900) {
+  const url = env("SUPABASE_URL", ["NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL"]);
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) throw new Error("Supabase do servidor não configurado.");
+  const objectPath = [bucket].concat(path.split("/")).map(encodeURIComponent).join("/");
+  const response = await fetch(url + "/storage/v1/object/sign/" + objectPath, {
     method: "POST",
-    headers: {
-      Authorization: "Bearer " + apiKey,
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey
-    },
-    body: JSON.stringify(payload)
+    headers: { apikey: serviceKey, Authorization: "Bearer " + serviceKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ expiresIn })
   });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result?.message || "O Resend recusou o envio do e-book.");
-  return result;
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload?.message || "Não foi possível liberar a visualização do e-book.");
+  const signed = payload.signedURL || payload.signedUrl;
+  if (!signed) throw new Error("O Supabase não retornou o acesso temporário ao e-book.");
+  return /^https?:/.test(signed) ? signed : url + "/storage/v1" + signed;
 }
 
 export function appendForm(params, key, value) {

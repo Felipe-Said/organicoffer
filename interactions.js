@@ -163,6 +163,68 @@
     sessionStorage.setItem("oferta-organica-visitor-session", visitorSession);
   }
 
+  function deliveryElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text) element.textContent = text;
+    return element;
+  }
+
+  function installDeliveryStyles() {
+    if (document.getElementById("paid-delivery-styles")) return;
+    const style = document.createElement("style");
+    style.id = "paid-delivery-styles";
+    style.textContent = ".paid-delivery{padding:28px 20px 22px;text-align:center;animation:paidReveal .45s cubic-bezier(.16,1,.3,1)}" +
+      ".paid-delivery-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:#e9f5ed;color:#23613a;font:700 12px Arial,sans-serif;letter-spacing:.03em}" +
+      ".paid-delivery h3{margin:14px 0 7px;color:#202020;font:800 26px/1.15 Arial,sans-serif}" +
+      ".paid-delivery-copy{margin:0 auto 20px;max-width:560px;color:#6d6d6d;font:400 14px/1.55 Arial,sans-serif}" +
+      ".paid-delivery-cover{width:min(310px,100%);height:390px;margin:0 auto 18px;border:1px solid #d8dce1;border-radius:8px;background:#fff;box-shadow:0 12px 28px rgba(37,45,55,.13)}" +
+      ".paid-delivery-download{display:flex;align-items:center;justify-content:center;width:min(520px,100%);min-height:50px;margin:0 auto;padding:13px 20px;border-radius:5px;background:#1677a8;color:#fff!important;font:800 16px Arial,sans-serif;text-decoration:none!important;transition:transform .25s cubic-bezier(.16,1,.3,1),background-color .25s ease}" +
+      ".paid-delivery-download:hover{background:#12658f}.paid-delivery-download:active{transform:translateY(1px) scale(.99)}" +
+      ".paid-delivery-note{margin:11px 0 0;color:#8a8a8a;font:400 12px Arial,sans-serif}" +
+      ".paid-delivery-loading{height:310px;margin:10px auto 20px;border-radius:8px;background:linear-gradient(100deg,#f1f1f1 20%,#fafafa 36%,#f1f1f1 52%);background-size:220% 100%;animation:deliveryShimmer 1.3s infinite}" +
+      ".paid-delivery-error{padding:18px;border:1px solid #e2b8ae;border-radius:8px;background:#fff5f2;color:#8e3024;font:600 14px/1.5 Arial,sans-serif}" +
+      "@keyframes deliveryShimmer{to{background-position-x:-220%}}@keyframes paidReveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}";
+    document.head.appendChild(style);
+  }
+
+  async function showPaidDelivery() {
+    const query = new URLSearchParams(location.search);
+    const sessionId = query.get("session_id");
+    if (query.get("payment") !== "success" || !sessionId || !body) return;
+    installDeliveryStyles();
+    body.replaceChildren();
+    const panel = deliveryElement("section", "paid-delivery");
+    panel.setAttribute("aria-live", "polite");
+    panel.appendChild(deliveryElement("span", "paid-delivery-badge", "Pagamento confirmado"));
+    panel.appendChild(deliveryElement("h3", "", "Preparando seu e-book"));
+    panel.appendChild(deliveryElement("p", "paid-delivery-copy", "Estamos validando sua compra e liberando o arquivo com segurança."));
+    panel.appendChild(deliveryElement("div", "paid-delivery-loading"));
+    body.appendChild(panel);
+    try {
+      const response = await fetch("/api/payment-delivery?session_id=" + encodeURIComponent(sessionId), { headers: { Accept: "application/json" } });
+      const payload = await response.json();
+      if (!response.ok || !payload.preview_url) throw new Error(payload.error || "Não foi possível liberar o e-book.");
+      panel.replaceChildren();
+      panel.appendChild(deliveryElement("span", "paid-delivery-badge", "Pagamento confirmado"));
+      panel.appendChild(deliveryElement("h3", "", "Seu e-book está pronto"));
+      panel.appendChild(deliveryElement("p", "paid-delivery-copy", "A compra foi aprovada. Você já pode visualizar a capa e baixar o arquivo."));
+      const cover = deliveryElement("object", "paid-delivery-cover");
+      cover.type = "application/pdf"; cover.data = payload.preview_url + "#page=1&view=FitH";
+      cover.setAttribute("aria-label", "Capa do e-book adquirido"); panel.appendChild(cover);
+      const download = deliveryElement("a", "paid-delivery-download", "Baixar meu e-book");
+      download.href = payload.download_url; download.setAttribute("download", payload.file_name || "ebook.pdf");
+      panel.appendChild(download);
+      panel.appendChild(deliveryElement("p", "paid-delivery-note", "O link é protegido e vinculado a esta compra."));
+    } catch (error) {
+      panel.replaceChildren();
+      panel.appendChild(deliveryElement("h3", "", "Pagamento confirmado"));
+      panel.appendChild(deliveryElement("p", "paid-delivery-error", error.message || "Não foi possível liberar o arquivo agora. Atualize a página para tentar novamente."));
+    }
+  }
+
+  showPaidDelivery();
+
   function recordEvent(type) {
     if (!databaseReady || !visitorSession) return Promise.resolve();
     return OfferDB.insert("site_events", [{ session_id: visitorSession, event_type: type, path: location.pathname }], false).catch(function () {});

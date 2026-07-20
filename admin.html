@@ -1373,7 +1373,7 @@
           <div class="section-header">
             <div>
               <h2>Entrega do E-book</h2>
-              <p style="font-size:13px;color:var(--text-muted);margin-top:6px;">O arquivo será enviado pelo Resend somente após a confirmação do pagamento.</p>
+              <p style="font-size:13px;color:var(--text-muted);margin-top:6px;">Após a confirmação da Stripe, o formulário de pagamento exibirá a capa e o botão de download.</p>
             </div>
           </div>
 
@@ -1395,26 +1395,12 @@
                 <p class="field-helper">Somente PDF, com até 28 MB. A primeira página será exibida como capa.</p>
                 <p id="ebook-upload-status" class="field-status" role="status" aria-live="polite"></p>
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="delivery-sender-name">Nome do remetente</label>
-                  <input type="text" id="delivery-sender-name" class="form-control" placeholder="Vovó Tereza">
-                </div>
-                <div class="form-group">
-                  <label for="delivery-sender-email">E-mail remetente</label>
-                  <input type="email" id="delivery-sender-email" class="form-control" placeholder="ebook@seudominio.com">
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="delivery-subject">Assunto do e-mail</label>
-                <input type="text" id="delivery-subject" class="form-control" placeholder="Seu e-book chegou">
-              </div>
               <div class="delivery-security-note">
                 <i class="fa-solid fa-lock"></i>
-                <p><strong>Envio protegido</strong><span>Configure <code>RESEND_API_KEY</code> na Vercel. O PDF permanece privado no Supabase.</span></p>
+                <p><strong>Download protegido</strong><span>O PDF permanece privado no Supabase e só é liberado após a validação do pagamento.</span></p>
               </div>
               <div class="form-actions">
-                <button class="btn btn-primary" id="save-delivery-button" onclick="saveDeliverySettings()"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar e enviar arquivo</button>
+                <button class="btn btn-primary" id="save-delivery-button" onclick="saveDeliverySettings()"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar e-book</button>
               </div>
             </div>
           </div>

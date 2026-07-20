@@ -296,9 +296,6 @@
   async function loadDeliverySettings() {
     const rows = await OfferDB.select("app_settings", "select=*&key=eq.delivery", true);
     deliverySettings = rows[0] ? rows[0].value : {};
-    document.getElementById("delivery-sender-name").value = deliverySettings.sender_name || "Vovó Tereza";
-    document.getElementById("delivery-sender-email").value = deliverySettings.sender_email || "";
-    document.getElementById("delivery-subject").value = deliverySettings.subject || "Seu e-book chegou";
     if (deliverySettings.storage_path) {
       try {
         const url = await OfferDB.storage.signedUrl("ebooks", deliverySettings.storage_path, 3600);
@@ -326,12 +323,6 @@
 
   async function saveDeliverySettings() {
     const button = document.getElementById("save-delivery-button");
-    const senderName = document.getElementById("delivery-sender-name").value.trim();
-    const senderEmail = document.getElementById("delivery-sender-email").value.trim().toLowerCase();
-    const subject = document.getElementById("delivery-subject").value.trim();
-    if (!senderName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail) || !subject) {
-      return setDeliveryStatus("Preencha o nome, um e-mail remetente válido e o assunto.", "error");
-    }
     if (!selectedEbookFile && !deliverySettings.storage_path) return setDeliveryStatus("Selecione o PDF que será enviado.", "error");
     button.disabled = true;
     setDeliveryStatus(selectedEbookFile ? "Enviando o PDF com segurança..." : "Salvando configurações...");
@@ -343,7 +334,7 @@
         deliverySettings.file_size = selectedEbookFile.size;
       }
       deliverySettings = Object.assign({}, deliverySettings, {
-        provider: "resend", sender_name: senderName, sender_email: senderEmail, subject: subject
+        provider: "download"
       });
       await OfferDB.upsert("app_settings", [{ key: "delivery", value: deliverySettings, updated_at: new Date().toISOString() }], "key", true);
       selectedEbookFile = null;
