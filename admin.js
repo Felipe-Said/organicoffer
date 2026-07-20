@@ -278,6 +278,11 @@
     const preview = document.getElementById("ebook-preview");
     const empty = document.getElementById("ebook-empty");
     const meta = document.getElementById("ebook-file-meta");
+    const hasStoredEbook = Boolean(deliverySettings.storage_path);
+    const selectButton = document.getElementById("select-ebook-button");
+    const deleteButton = document.getElementById("delete-ebook-button");
+    selectButton.innerHTML = hasStoredEbook ? '<i class="fa-solid fa-rotate"></i> Trocar PDF' : '<i class="fa-solid fa-file-arrow-up"></i> Selecionar PDF';
+    deleteButton.hidden = !hasStoredEbook;
     if (!url) {
       preview.removeAttribute("data"); preview.classList.remove("visible"); empty.style.display = "grid"; meta.textContent = ""; return;
     }
@@ -285,6 +290,10 @@
     preview.classList.add("visible"); empty.style.display = "none";
     const size = fileSize ? " · " + (fileSize / 1024 / 1024).toFixed(2).replace(".", ",") + " MB" : "";
     meta.textContent = (fileName || "E-book configurado") + size;
+  }
+
+  function chooseEbookFile() {
+    document.getElementById("ebook-file").click();
   }
 
   function setDeliveryStatus(message, type) {
@@ -346,6 +355,27 @@
     finally { button.disabled = false; }
   }
 
+  async function deleteCurrentEbook() {
+    if (!deliverySettings.storage_path) return;
+    if (!window.confirm("Apagar o PDF atual? Clientes não poderão baixá-lo até que um novo arquivo seja enviado.")) return;
+    const button = document.getElementById("delete-ebook-button");
+    const path = deliverySettings.storage_path;
+    button.disabled = true;
+    setDeliveryStatus("Apagando o PDF atual...");
+    try {
+      await OfferDB.storage.remove("ebooks", path);
+      deliverySettings = { provider: "download", storage_path: "", file_name: "", file_size: 0 };
+      await OfferDB.upsert("app_settings", [{ key: "delivery", value: deliverySettings, updated_at: new Date().toISOString() }], "key", true);
+      selectedEbookFile = null;
+      document.getElementById("ebook-file").value = "";
+      if (ebookObjectUrl) { URL.revokeObjectURL(ebookObjectUrl); ebookObjectUrl = ""; }
+      renderEbookPreview("", "", 0);
+      setDeliveryStatus("PDF apagado. Envie um novo arquivo antes de vender.", "success");
+      showToast("PDF atual removido.");
+    } catch (error) { setDeliveryStatus(error.message, "error"); showToast(error.message, "error"); }
+    finally { button.disabled = false; }
+  }
+
   function switchTab(tabId) {
     document.querySelectorAll(".menu-item").forEach(function (item) { item.classList.toggle("active", item.dataset.tab === tabId); });
     document.querySelectorAll(".tab-content").forEach(function (tab) { tab.classList.toggle("active", tab.id === "tab-" + tabId); });
@@ -384,6 +414,8 @@
   window.saveSettings = saveSettings;
   window.saveGatewaySettings = saveGatewaySettings;
   window.saveDeliverySettings = saveDeliverySettings;
+  window.chooseEbookFile = chooseEbookFile;
+  window.deleteCurrentEbook = deleteCurrentEbook;
   window.closeModal = closeModal;
   window.queueResendFromModal = queueResendFromModal;
   window.logoutAdmin = async function () { await OfferDB.auth.signOut(); location.replace("login.html"); };

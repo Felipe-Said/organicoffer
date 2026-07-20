@@ -104,6 +104,8 @@ drop policy if exists "admins upload ebooks" on storage.objects;
 create policy "admins upload ebooks" on storage.objects for insert to authenticated with check (bucket_id='ebooks' and (select public.is_admin()));
 drop policy if exists "admins update ebooks" on storage.objects;
 create policy "admins update ebooks" on storage.objects for update to authenticated using (bucket_id='ebooks' and (select public.is_admin())) with check (bucket_id='ebooks' and (select public.is_admin()));
+drop policy if exists "admins delete ebooks" on storage.objects;
+create policy "admins delete ebooks" on storage.objects for delete to authenticated using (bucket_id='ebooks' and (select public.is_admin()));
 
 alter table public.admin_profiles enable row level security;
 alter table public.orders enable row level security;

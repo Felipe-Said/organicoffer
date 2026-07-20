@@ -148,6 +148,11 @@
           headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "true" }
         });
       },
+      remove(bucket, path) {
+        return storageRequest("object/" + encodeURIComponent(bucket) + "/" + path.split("/").map(encodeURIComponent).join("/"), {
+          method: "DELETE"
+        });
+      },
       async signedUrl(bucket, path, expiresIn) {
         const payload = await storageRequest("object/sign/" + encodeURIComponent(bucket) + "/" + path.split("/").map(encodeURIComponent).join("/"), {
           method: "POST", body: JSON.stringify({ expiresIn: expiresIn || 3600 }), headers: { "Content-Type": "application/json" }

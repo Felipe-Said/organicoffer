@@ -907,6 +907,11 @@
     .field-helper, .field-status { margin-top: 7px; font-size: 12px; color: var(--text-muted); }
     .field-status.error { color: #a43a2b; }
     .field-status.success { color: var(--color-green); }
+    .ebook-file-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .ebook-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn-danger { color: #9f2f22; background: #fff5f2; border-color: #dfb4aa; }
+    .btn-danger:hover { color: #7e2117; background: #fbe8e3; border-color: #c98272; }
+    .btn-danger:disabled { opacity: .55; cursor: not-allowed; }
     .delivery-security-note {
       display: flex;
       gap: 13px;
@@ -1391,7 +1396,11 @@
             <div>
               <div class="form-group">
                 <label for="ebook-file">Arquivo do e-book</label>
-                <input type="file" id="ebook-file" class="form-control" accept="application/pdf,.pdf">
+                <input type="file" id="ebook-file" class="ebook-file-input" accept="application/pdf,.pdf">
+                <div class="ebook-actions">
+                  <button type="button" class="btn btn-secondary" id="select-ebook-button" onclick="chooseEbookFile()"><i class="fa-solid fa-file-arrow-up"></i> Selecionar PDF</button>
+                  <button type="button" class="btn btn-danger" id="delete-ebook-button" onclick="deleteCurrentEbook()" hidden><i class="fa-solid fa-trash-can"></i> Apagar PDF atual</button>
+                </div>
                 <p class="field-helper">Somente PDF, com até 28 MB. A primeira página será exibida como capa.</p>
                 <p id="ebook-upload-status" class="field-status" role="status" aria-live="polite"></p>
               </div>

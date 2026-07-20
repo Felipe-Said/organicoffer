@@ -36,3 +36,8 @@ create policy "admins update ebooks"
   on storage.objects for update to authenticated
   using (bucket_id='ebooks' and (select public.is_admin()))
   with check (bucket_id='ebooks' and (select public.is_admin()));
+
+drop policy if exists "admins delete ebooks" on storage.objects;
+create policy "admins delete ebooks"
+  on storage.objects for delete to authenticated
+  using (bucket_id='ebooks' and (select public.is_admin()));
