@@ -65,6 +65,8 @@ export default async function handler(request, response) {
     appendForm(params, "cancel_url", origin + "/?payment=cancelled");
     appendForm(params, "metadata[order_id]", order.id);
     appendForm(params, "metadata[order_number]", order.order_number);
+    appendForm(params, "metadata[product_type]", "digital");
+    appendForm(params, "metadata[fulfillment_status]", "pending");
     if (mode === "subscription") appendForm(params, "subscription_data[metadata][order_id]", order.id);
     const checkout = await stripe("checkout/sessions", { method: "POST", body: params });
     await supabase("orders?id=eq." + encodeURIComponent(order.id), {

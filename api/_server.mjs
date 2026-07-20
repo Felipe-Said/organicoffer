@@ -44,6 +44,35 @@ export async function stripe(path, options = {}) {
   return payload;
 }
 
+export async function storageDownload(bucket, path) {
+  const url = env("SUPABASE_URL", ["NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL"]);
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) throw new Error("Supabase do servidor não configurado.");
+  const objectPath = [bucket].concat(path.split("/")).map(encodeURIComponent).join("/");
+  const response = await fetch(url + "/storage/v1/object/" + objectPath, {
+    headers: { apikey: serviceKey, Authorization: "Bearer " + serviceKey }
+  });
+  if (!response.ok) throw new Error("Não foi possível baixar o e-book privado.");
+  return Buffer.from(await response.arrayBuffer());
+}
+
+export async function resendEmail(payload, idempotencyKey) {
+  const apiKey = env("RESEND_API_KEY");
+  if (!apiKey) throw new Error("RESEND_API_KEY não configurada na Vercel.");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + apiKey,
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey
+    },
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result?.message || "O Resend recusou o envio do e-book.");
+  return result;
+}
+
 export function appendForm(params, key, value) {
   if (value !== undefined && value !== null && value !== "") params.append(key, String(value));
 }

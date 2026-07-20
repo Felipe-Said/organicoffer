@@ -4,6 +4,9 @@
   let orders = [];
   let customers = [];
   let currentSelectedOrderId = null;
+  let deliverySettings = {};
+  let selectedEbookFile = null;
+  let ebookObjectUrl = "";
 
   const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" });
   const number = new Intl.NumberFormat("pt-BR");
@@ -271,10 +274,91 @@
     finally { button.disabled = false; }
   }
 
+  function renderEbookPreview(url, fileName, fileSize) {
+    const preview = document.getElementById("ebook-preview");
+    const empty = document.getElementById("ebook-empty");
+    const meta = document.getElementById("ebook-file-meta");
+    if (!url) {
+      preview.removeAttribute("data"); preview.classList.remove("visible"); empty.style.display = "grid"; meta.textContent = ""; return;
+    }
+    preview.data = url + (url.includes("#") ? "" : "#page=1&view=FitH");
+    preview.classList.add("visible"); empty.style.display = "none";
+    const size = fileSize ? " · " + (fileSize / 1024 / 1024).toFixed(2).replace(".", ",") + " MB" : "";
+    meta.textContent = (fileName || "E-book configurado") + size;
+  }
+
+  function setDeliveryStatus(message, type) {
+    const status = document.getElementById("ebook-upload-status");
+    status.textContent = message || "";
+    status.className = "field-status" + (type ? " " + type : "");
+  }
+
+  async function loadDeliverySettings() {
+    const rows = await OfferDB.select("app_settings", "select=*&key=eq.delivery", true);
+    deliverySettings = rows[0] ? rows[0].value : {};
+    document.getElementById("delivery-sender-name").value = deliverySettings.sender_name || "Vovó Tereza";
+    document.getElementById("delivery-sender-email").value = deliverySettings.sender_email || "";
+    document.getElementById("delivery-subject").value = deliverySettings.subject || "Seu e-book chegou";
+    if (deliverySettings.storage_path) {
+      try {
+        const url = await OfferDB.storage.signedUrl("ebooks", deliverySettings.storage_path, 3600);
+        renderEbookPreview(url, deliverySettings.file_name, deliverySettings.file_size);
+      } catch (error) { setDeliveryStatus("Não foi possível carregar a capa: " + error.message, "error"); }
+    } else renderEbookPreview("", "", 0);
+  }
+
+  function selectEbookFile(event) {
+    const file = event.target.files && event.target.files[0];
+    selectedEbookFile = null;
+    if (!file) return;
+    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+      event.target.value = ""; setDeliveryStatus("Selecione um arquivo PDF.", "error"); return;
+    }
+    if (file.size > 28 * 1024 * 1024) {
+      event.target.value = ""; setDeliveryStatus("O PDF deve ter no máximo 28 MB.", "error"); return;
+    }
+    selectedEbookFile = file;
+    if (ebookObjectUrl) URL.revokeObjectURL(ebookObjectUrl);
+    ebookObjectUrl = URL.createObjectURL(file);
+    renderEbookPreview(ebookObjectUrl, file.name, file.size);
+    setDeliveryStatus("Arquivo pronto para upload.");
+  }
+
+  async function saveDeliverySettings() {
+    const button = document.getElementById("save-delivery-button");
+    const senderName = document.getElementById("delivery-sender-name").value.trim();
+    const senderEmail = document.getElementById("delivery-sender-email").value.trim().toLowerCase();
+    const subject = document.getElementById("delivery-subject").value.trim();
+    if (!senderName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail) || !subject) {
+      return setDeliveryStatus("Preencha o nome, um e-mail remetente válido e o assunto.", "error");
+    }
+    if (!selectedEbookFile && !deliverySettings.storage_path) return setDeliveryStatus("Selecione o PDF que será enviado.", "error");
+    button.disabled = true;
+    setDeliveryStatus(selectedEbookFile ? "Enviando o PDF com segurança..." : "Salvando configurações...");
+    try {
+      if (selectedEbookFile) {
+        await OfferDB.storage.upload("ebooks", "delivery/ebook.pdf", selectedEbookFile);
+        deliverySettings.storage_path = "delivery/ebook.pdf";
+        deliverySettings.file_name = selectedEbookFile.name;
+        deliverySettings.file_size = selectedEbookFile.size;
+      }
+      deliverySettings = Object.assign({}, deliverySettings, {
+        provider: "resend", sender_name: senderName, sender_email: senderEmail, subject: subject
+      });
+      await OfferDB.upsert("app_settings", [{ key: "delivery", value: deliverySettings, updated_at: new Date().toISOString() }], "key", true);
+      selectedEbookFile = null;
+      document.getElementById("ebook-file").value = "";
+      await loadDeliverySettings();
+      setDeliveryStatus("E-book e configurações salvos.", "success");
+      showToast("Entrega automática configurada.");
+    } catch (error) { setDeliveryStatus(error.message, "error"); showToast(error.message, "error"); }
+    finally { button.disabled = false; }
+  }
+
   function switchTab(tabId) {
     document.querySelectorAll(".menu-item").forEach(function (item) { item.classList.toggle("active", item.dataset.tab === tabId); });
     document.querySelectorAll(".tab-content").forEach(function (tab) { tab.classList.toggle("active", tab.id === "tab-" + tabId); });
-    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", settings: "Configurações do Funil" };
+    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", delivery: "Envio do E-book", settings: "Configurações do Funil" };
     document.getElementById("page-title-text").textContent = titles[tabId] || "Painel";
     document.getElementById("sidebar").classList.remove("open");
   }
@@ -298,7 +382,8 @@
       document.getElementById("order-search").addEventListener("input", renderOrdersTable);
       document.getElementById("order-status-filter").addEventListener("change", renderOrdersTable);
       document.getElementById("customer-search").addEventListener("input", renderCustomersTable);
-      await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings()]);
+      document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
+      await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings(), loadDeliverySettings()]);
     } catch (error) { showToast(error.message, "error"); }
   }
 
@@ -307,6 +392,7 @@
   window.resetProductsForm = loadProductsForm;
   window.saveSettings = saveSettings;
   window.saveGatewaySettings = saveGatewaySettings;
+  window.saveDeliverySettings = saveDeliverySettings;
   window.closeModal = closeModal;
   window.queueResendFromModal = queueResendFromModal;
   window.logoutAdmin = async function () { await OfferDB.auth.signOut(); location.replace("login.html"); };

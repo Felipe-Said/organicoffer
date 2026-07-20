@@ -80,6 +80,22 @@
     return request("/rest/v1/" + table + suffix, Object.assign({}, settings, { token: token }));
   }
 
+  async function storageRequest(path, options) {
+    if (!configured()) throw new Error("Supabase ainda não foi configurado.");
+    const settings = options || {};
+    const token = await adminToken();
+    const response = await fetch(config.url + "/storage/v1/" + path, {
+      method: settings.method || "GET",
+      headers: Object.assign({ apikey: config.anonKey, Authorization: "Bearer " + token }, settings.headers || {}),
+      body: settings.body
+    });
+    const text = await response.text();
+    let payload = null;
+    try { payload = text ? JSON.parse(text) : null; } catch (_) { payload = text; }
+    if (!response.ok) throw new Error(payload && (payload.message || payload.error) || "Falha ao acessar o armazenamento.");
+    return payload;
+  }
+
   window.OfferDB = {
     configured: configured,
     auth: {
@@ -124,6 +140,21 @@
     async rpc(name, args, admin) {
       const token = admin ? await adminToken() : null;
       return request("/rest/v1/rpc/" + name, { method: "POST", body: args || {}, token: token });
+    },
+    storage: {
+      upload(bucket, path, file) {
+        return storageRequest("object/" + encodeURIComponent(bucket) + "/" + path.split("/").map(encodeURIComponent).join("/"), {
+          method: "POST", body: file,
+          headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "true" }
+        });
+      },
+      async signedUrl(bucket, path, expiresIn) {
+        const payload = await storageRequest("object/sign/" + encodeURIComponent(bucket) + "/" + path.split("/").map(encodeURIComponent).join("/"), {
+          method: "POST", body: JSON.stringify({ expiresIn: expiresIn || 3600 }), headers: { "Content-Type": "application/json" }
+        });
+        const signed = payload && (payload.signedURL || payload.signedUrl);
+        return signed && (/^https?:/.test(signed) ? signed : config.url + "/storage/v1" + signed);
+      }
     }
   };
 })();

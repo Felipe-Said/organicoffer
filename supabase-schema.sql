@@ -64,9 +64,10 @@ create index if not exists site_events_type_created_idx on public.site_events(ev
 
 create table if not exists public.email_delivery_jobs (
   id uuid primary key default gen_random_uuid(),
-  order_id uuid not null references public.orders(id) on delete cascade,
-  requested_by uuid not null default auth.uid() references auth.users(id),
+  order_id uuid not null unique references public.orders(id) on delete cascade,
+  requested_by uuid default auth.uid() references auth.users(id),
   status text not null default 'queued' check (status in ('queued','processing','sent','failed')),
+  provider_reference text,
   error_message text,
   created_at timestamptz not null default now(),
   processed_at timestamptz
@@ -85,10 +86,24 @@ on conflict (key) do nothing;
 insert into public.app_settings(key,value) values
 ('payment_gateway',jsonb_build_object('provider','stripe','checkout_mode','payment','payment_price_id','','subscription_price_id',''))
 on conflict (key) do nothing;
+insert into public.app_settings(key,value) values
+('delivery',jsonb_build_object('provider','resend','storage_path','','file_name','','file_size',0,'sender_name','Vovó Tereza','sender_email','','subject','Seu e-book chegou'))
+on conflict (key) do nothing;
+
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values ('ebooks','ebooks',false,29360128,array['application/pdf'])
+on conflict (id) do update set public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public
 as $$ select exists(select 1 from public.admin_profiles where user_id = (select auth.uid())) $$;
+
+drop policy if exists "admins read ebooks" on storage.objects;
+create policy "admins read ebooks" on storage.objects for select to authenticated using (bucket_id='ebooks' and (select public.is_admin()));
+drop policy if exists "admins upload ebooks" on storage.objects;
+create policy "admins upload ebooks" on storage.objects for insert to authenticated with check (bucket_id='ebooks' and (select public.is_admin()));
+drop policy if exists "admins update ebooks" on storage.objects;
+create policy "admins update ebooks" on storage.objects for update to authenticated using (bucket_id='ebooks' and (select public.is_admin())) with check (bucket_id='ebooks' and (select public.is_admin()));
 
 alter table public.admin_profiles enable row level security;
 alter table public.orders enable row level security;
