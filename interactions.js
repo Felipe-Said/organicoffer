@@ -183,6 +183,7 @@
     "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
+  document.documentElement.classList.remove("translation-pending");
 
   const order = document.querySelector(".container-order-form-two-step");
   const body = order && order.querySelector(".form-body");
