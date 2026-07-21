@@ -67,8 +67,8 @@ export default async function handler(request, response) {
     appendForm(params, "line_items[0][quantity]", 1);
     appendForm(params, "customer", stripeCustomer.id);
     appendForm(params, "client_reference_id", order.id);
-    appendForm(params, "success_url", origin + "/?payment=success&session_id={CHECKOUT_SESSION_ID}");
-    appendForm(params, "cancel_url", origin + "/?payment=cancelled");
+    appendForm(params, "success_url", origin + "/receitas?payment=success&session_id={CHECKOUT_SESSION_ID}");
+    appendForm(params, "cancel_url", origin + "/receitas?payment=cancelled");
     appendForm(params, "metadata[order_id]", order.id);
     appendForm(params, "metadata[order_number]", order.order_number);
     appendForm(params, "metadata[product_type]", "digital");

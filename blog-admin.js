@@ -30,6 +30,10 @@
     });
   }
   function showImage(image, url) { image.src = url || ""; image.classList.toggle("visible", Boolean(url)); }
+  function configuredBlogUrl() {
+    const value = String(settings.blog_url || "").trim();
+    return !value || /\/blog(?:\.html)?\/?$/i.test(value) ? location.origin + "/" : value;
+  }
 
   async function loadAll() {
     const results = await Promise.all([
@@ -44,13 +48,13 @@
   function renderLayout() {
     el("blog-site-title").value = settings.title || "Conteúdos de Vovó Tereza";
     el("blog-site-subtitle").value = settings.subtitle || "Informação prática para uma vida mais natural.";
-    el("blog-public-url").value = settings.blog_url || (location.origin + "/blog.html");
+    el("blog-public-url").value = configuredBlogUrl();
     el("blog-primary-color").value = settings.primary_color || "#245438";
     el("blog-background-color").value = settings.background_color || "#f7f2e8";
     el("blog-custom-css").value = settings.custom_css || "";
     showImage(el("blog-hero-desktop-preview"), settings.hero_desktop_url);
     showImage(el("blog-hero-mobile-preview"), settings.hero_mobile_url);
-    el("blog-open-link").href = settings.blog_url || "/blog.html";
+    el("blog-open-link").href = configuredBlogUrl();
   }
 
   function categoryName(category) {
@@ -71,7 +75,7 @@
     const list = el("blog-category-list"); list.innerHTML = "";
     categories.forEach(function (category) {
       const row = document.createElement("div"); row.className = "blog-category-item";
-      const info = document.createElement("div"); const name = document.createElement("strong"); name.textContent = categoryName(category); const slug = document.createElement("div"); slug.style.cssText = "font-size:12px;color:var(--text-muted);margin-top:3px"; slug.textContent = "/blog.html?category=" + category.slug; info.append(name, slug);
+      const info = document.createElement("div"); const name = document.createElement("strong"); name.textContent = categoryName(category); const slug = document.createElement("div"); slug.style.cssText = "font-size:12px;color:var(--text-muted);margin-top:3px"; slug.textContent = "/?category=" + category.slug; info.append(name, slug);
       const actions = document.createElement("div");
       const edit = document.createElement("button"); edit.className = "btn-icon-only"; edit.title = "Editar"; edit.innerHTML = '<i class="fa-solid fa-pen"></i>'; edit.addEventListener("click", function () { editCategory(category); });
       const remove = document.createElement("button"); remove.className = "btn-icon-only"; remove.title = "Excluir"; remove.innerHTML = '<i class="fa-solid fa-trash"></i>'; remove.addEventListener("click", function () { deleteCategory(category); }); actions.append(edit, remove); row.append(info, actions); list.appendChild(row);
@@ -126,7 +130,7 @@
   async function saveLayout() {
     const desktop = await upload(files.heroDesktop, "layout/desktop") || settings.hero_desktop_url || "";
     const mobile = await upload(files.heroMobile, "layout/mobile") || settings.hero_mobile_url || desktop;
-    const row = { id: "main", title: el("blog-site-title").value.trim(), subtitle: el("blog-site-subtitle").value.trim(), blog_url: el("blog-public-url").value.trim() || location.origin + "/blog.html", primary_color: el("blog-primary-color").value, background_color: el("blog-background-color").value, hero_desktop_url: desktop, hero_mobile_url: mobile, custom_css: el("blog-custom-css").value, updated_at: new Date().toISOString() };
+    const row = { id: "main", title: el("blog-site-title").value.trim(), subtitle: el("blog-site-subtitle").value.trim(), blog_url: el("blog-public-url").value.trim() || location.origin + "/", primary_color: el("blog-primary-color").value, background_color: el("blog-background-color").value, hero_desktop_url: desktop, hero_mobile_url: mobile, custom_css: el("blog-custom-css").value, updated_at: new Date().toISOString() };
     await OfferDB.upsert("blog_settings", [row], "id", true); settings = row; renderLayout(); toast("Layout do blog publicado.");
   }
   function openPanel(name) { document.querySelectorAll(".blog-tab").forEach(function (tab) { tab.classList.toggle("active", tab.dataset.blogPanel === name); }); document.querySelectorAll(".blog-panel").forEach(function (panel) { panel.classList.toggle("active", panel.id === "blog-panel-" + name); }); }

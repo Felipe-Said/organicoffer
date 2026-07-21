@@ -5,11 +5,11 @@
   function categoryName(id) { return categories.find(function (item) { return item.id === id; })?.name || "Sem categoria"; }
   function link(path, label) { const anchor = document.createElement("a"); anchor.href = path; anchor.textContent = label; return anchor; }
   function renderNavigation() {
-    const nav = byId("blog-navigation"); nav.innerHTML = ""; nav.appendChild(link("/blog.html", "Home"));
+    const nav = byId("blog-navigation"); nav.innerHTML = ""; nav.appendChild(link("/", "Home"));
     categories.filter(function (item) { return !item.parent_id; }).forEach(function (category) {
-      const group = document.createElement("div"); group.className = "blog-nav-group"; group.appendChild(link("/blog.html?category=" + encodeURIComponent(category.slug), category.name));
+      const group = document.createElement("div"); group.className = "blog-nav-group"; group.appendChild(link("/?category=" + encodeURIComponent(category.slug), category.name));
       const children = categories.filter(function (item) { return item.parent_id === category.id; });
-      if (children.length) { const submenu = document.createElement("div"); submenu.className = "blog-nav-submenu"; children.forEach(function (child) { submenu.appendChild(link("/blog.html?category=" + encodeURIComponent(child.slug), child.name)); }); group.appendChild(submenu); }
+      if (children.length) { const submenu = document.createElement("div"); submenu.className = "blog-nav-submenu"; children.forEach(function (child) { submenu.appendChild(link("/?category=" + encodeURIComponent(child.slug), child.name)); }); group.appendChild(submenu); }
       nav.appendChild(group);
     });
   }
@@ -23,7 +23,7 @@
     list.forEach(function (post) {
       const card = document.createElement("article"); card.className = "blog-card"; if (post.desktop_image_url || post.mobile_image_url) card.appendChild(picture(post.desktop_image_url, post.mobile_image_url, post.title));
       const copy = document.createElement("div"); copy.className = "blog-card-copy"; const category = document.createElement("span"); category.className = "blog-card-category"; category.textContent = categoryName(post.category_id); const heading = document.createElement("h3"); heading.textContent = post.title; const excerpt = document.createElement("p"); excerpt.textContent = post.excerpt || "";
-      copy.append(category, heading, excerpt, link("/blog.html?post=" + encodeURIComponent(post.slug), "Ler publicação →")); card.appendChild(copy); grid.appendChild(card);
+      copy.append(category, heading, excerpt, link("/?post=" + encodeURIComponent(post.slug), "Ler publicação →")); card.appendChild(copy); grid.appendChild(card);
     });
   }
   function renderPost(post) {
@@ -33,7 +33,7 @@
     const content = document.createElement("div"); content.className = "blog-article-content"; content.innerHTML = post.content; article.append(header, content); document.title = post.title + " | " + (settings.title || "Vovó Tereza");
   }
   function route() {
-    const query = new URLSearchParams(location.search), postSlug = query.get("post"), categorySlug = query.get("category"); const breadcrumb = byId("blog-breadcrumb"); breadcrumb.innerHTML = ""; breadcrumb.appendChild(link("/blog.html", "Home"));
+    const query = new URLSearchParams(location.search), postSlug = query.get("post"), categorySlug = query.get("category"); const breadcrumb = byId("blog-breadcrumb"); breadcrumb.innerHTML = ""; breadcrumb.appendChild(link("/", "Home"));
     if (postSlug) { const post = posts.find(function (item) { return item.slug === postSlug; }); if (!post) return renderCards([], "Publicação não encontrada"); breadcrumb.append(" / " + post.title); return renderPost(post); }
     if (categorySlug) { const selected = categories.find(function (item) { return item.slug === categorySlug; }); if (!selected) return renderCards([], "Categoria não encontrada"); breadcrumb.append(" / " + selected.name); const ids = [selected.id].concat(categories.filter(function (item) { return item.parent_id === selected.id; }).map(function (item) { return item.id; })); return renderCards(posts.filter(function (post) { return ids.includes(post.category_id); }), selected.name); }
     renderCards(posts, "Novos conteúdos");

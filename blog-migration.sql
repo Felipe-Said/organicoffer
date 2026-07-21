@@ -31,7 +31,7 @@ create table if not exists public.blog_settings (
   id text primary key default 'main',
   title text not null default 'Conteúdos de Vovó Tereza',
   subtitle text not null default 'Informação prática para uma vida mais natural.',
-  blog_url text not null default '/blog.html',
+  blog_url text not null default '/',
   primary_color text not null default '#245438',
   background_color text not null default '#f7f2e8',
   hero_desktop_url text not null default '',
@@ -43,6 +43,7 @@ create table if not exists public.blog_settings (
 alter table public.blog_settings add column if not exists custom_css text not null default '';
 
 insert into public.blog_settings(id) values ('main') on conflict (id) do nothing;
+update public.blog_settings set blog_url='/' where id='main' and blog_url in ('/blog.html','/blog');
 
 alter table public.blog_categories enable row level security;
 alter table public.blog_posts enable row level security;

@@ -1,3 +1,10 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/blog.html" },
+    { "source": "/receitas", "destination": "/index.html" }
+  ],
+  "redirects": [
+    { "source": "/blog", "destination": "/", "permanent": true }
+  ]
 }

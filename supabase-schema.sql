@@ -94,7 +94,7 @@ create table if not exists public.blog_posts (
 );
 create table if not exists public.blog_settings (
   id text primary key default 'main', title text not null default 'Conteúdos de Vovó Tereza', subtitle text not null default 'Informação prática para uma vida mais natural.',
-  blog_url text not null default '/blog.html', primary_color text not null default '#245438', background_color text not null default '#f7f2e8',
+  blog_url text not null default '/', primary_color text not null default '#245438', background_color text not null default '#f7f2e8',
   hero_desktop_url text not null default '', hero_mobile_url text not null default '', custom_css text not null default '', updated_at timestamptz not null default now()
 );
 insert into public.blog_settings(id) values('main') on conflict(id) do nothing;
