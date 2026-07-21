@@ -324,11 +324,16 @@
   showPaidDelivery();
 
   function recordEvent(type, eventData) {
-    if (!databaseReady || !visitorSession || adminPreview) return Promise.resolve();
-    return OfferDB.insert("site_events", [{ session_id: visitorSession, event_type: type, path: location.pathname, event_data: eventData || {} }], false).catch(function () {});
+    if (!visitorSession || adminPreview) return Promise.resolve();
+    return fetch("/api/site-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: visitorSession, event_type: type, path: location.pathname, event_data: eventData || {} }),
+      keepalive: true
+    }).catch(function () {});
   }
 
-  if (databaseReady && visitorSession && !adminPreview) {
+  if (visitorSession && !adminPreview) {
     recordEvent("page_view");
     recordEvent("heartbeat");
     setInterval(function () { recordEvent("heartbeat"); }, 60000);

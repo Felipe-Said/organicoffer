@@ -592,7 +592,7 @@
     document.getElementById("clarity-click-count").textContent = "…";
     try {
       const since = new Date(Date.now() - 30 * 86400000).toISOString();
-      const events = await OfferDB.select("site_events", "select=session_id,event_type,event_data,created_at&event_type=in.(click,scroll_depth)&created_at=gte." + encodeURIComponent(since) + "&order=created_at.desc&limit=5000", true);
+      const events = await OfferDB.select("site_events", "select=session_id,event_type,event_data,created_at&event_type=in.(page_view,click,scroll_depth)&created_at=gte." + encodeURIComponent(since) + "&order=created_at.desc&limit=5000", true);
       const clicks = events.filter(function (event) { return event.event_type === "click"; });
       const scrolls = events.filter(function (event) { return event.event_type === "scroll_depth"; });
       const sessions = new Set(events.map(function (event) { return event.session_id; }));
