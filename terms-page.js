@@ -54,10 +54,30 @@
     document.title = "Termos, Política de Privacidade e Reembolso | Vovó Tereza";
   }
 
+  const editorElementQuery = "img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small";
+
+  function installStableEditorKeys() {
+    const counters = new Map();
+    document.querySelectorAll(editorElementQuery).forEach(function (element) {
+      const owner = element.closest("[id]");
+      const ownerKey = owner ? owner.id : "document";
+      const ordinal = counters.get(ownerKey) || 0;
+      counters.set(ownerKey, ordinal + 1);
+      element.dataset.editorKey = ownerKey + "::" + ordinal;
+    });
+  }
+
+  function reportManagedContent(status, detail) {
+    document.documentElement.dataset.managedContentStatus = status;
+    document.documentElement.dataset.managedContentDetail = detail || "";
+    window.dispatchEvent(new CustomEvent("managed-content-status", { detail: { status: status, message: detail || "" } }));
+  }
+
   async function loadManagedContent() {
-    if (!window.OfferDB || !OfferDB.configured()) return;
+    if (!window.OfferDB || !OfferDB.configured()) { reportManagedContent("error", "A conexão com o banco não foi carregada."); return; }
     try {
       const rows = await OfferDB.select("page_content", "select=selector,content_type,value&selector=like.legal::*", false);
+      let applied = 0;
       rows.forEach(function (row) {
         const selector = row.selector.slice(7);
         let element;
@@ -65,11 +85,14 @@
         if (!element) return;
         if (row.content_type === "image" && element.tagName === "IMG") element.src = row.value;
         if (row.content_type === "text") element.textContent = row.value;
+        applied += 1;
       });
-    } catch (_) { /* O conteúdo traduzido permanece disponível se o banco estiver indisponível. */ }
+      reportManagedContent("ready", String(applied));
+    } catch (error) { reportManagedContent("error", error.message); }
   }
 
   translatePage();
+  installStableEditorKeys();
   document.documentElement.classList.remove("translation-pending");
   loadManagedContent();
 })();

@@ -197,19 +197,42 @@
   const databaseReady = Boolean(window.OfferDB && OfferDB.configured());
   const adminPreview = new URLSearchParams(location.search).has("admin_preview");
   let visitorSession = sessionStorage.getItem("oferta-organica-visitor-session");
+  const editorElementQuery = "img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small";
+
+  function installStableEditorKeys() {
+    const counters = new Map();
+    document.querySelectorAll(editorElementQuery).forEach(function (element) {
+      const owner = element.closest("[id]");
+      const ownerKey = owner ? owner.id : "document";
+      const ordinal = counters.get(ownerKey) || 0;
+      counters.set(ownerKey, ordinal + 1);
+      element.dataset.editorKey = ownerKey + "::" + ordinal;
+    });
+  }
+
+  function reportManagedContent(status, detail) {
+    document.documentElement.dataset.managedContentStatus = status;
+    document.documentElement.dataset.managedContentDetail = detail || "";
+    window.dispatchEvent(new CustomEvent("managed-content-status", { detail: { status: status, message: detail || "" } }));
+  }
+
+  installStableEditorKeys();
 
   async function loadManagedPageContent() {
-    if (!databaseReady) return;
+    if (!databaseReady) { reportManagedContent("error", "A conexão com o banco não foi carregada."); return; }
     try {
       const rows = await OfferDB.select("page_content", "select=selector,content_type,value", false);
-      rows.forEach(function (row) {
+      let applied = 0;
+      rows.filter(function (row) { return !row.selector.startsWith("legal::"); }).forEach(function (row) {
         let element;
         try { element = document.querySelector(row.selector); } catch (_) { return; }
         if (!element) return;
         if (row.content_type === "image" && element.tagName === "IMG") element.src = row.value;
         if (row.content_type === "text") element.textContent = row.value;
+        applied += 1;
       });
-    } catch (_) { /* A página original permanece disponível antes da migração ou durante indisponibilidade. */ }
+      reportManagedContent("ready", String(applied));
+    } catch (error) { reportManagedContent("error", error.message); }
   }
 
   loadManagedPageContent();

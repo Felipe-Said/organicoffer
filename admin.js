@@ -418,6 +418,7 @@
   }
 
   function pageElementSelector(element, root) {
+    if (element.dataset.editorKey) return '[data-editor-key="' + CSS.escape(element.dataset.editorKey) + '"]';
     if (element.id) return "#" + CSS.escape(element.id);
     const parts = [];
     let current = element;
@@ -461,6 +462,16 @@
   function installEditorSelection(frame) {
     const frameDocument = frame.contentDocument;
     if (!frameDocument) return;
+    const editorElementQuery = "img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small";
+    const counters = new Map();
+    frameDocument.querySelectorAll(editorElementQuery).forEach(function (element) {
+      if (element.dataset.editorKey) return;
+      const owner = element.closest("[id]");
+      const ownerKey = owner ? owner.id : "document";
+      const ordinal = counters.get(ownerKey) || 0;
+      counters.set(ownerKey, ordinal + 1);
+      element.dataset.editorKey = ownerKey + "::" + ordinal;
+    });
     const style = frameDocument.createElement("style");
     style.textContent = "[data-admin-edit-hover]{outline:3px solid #c2521a!important;outline-offset:2px!important;cursor:pointer!important}";
     frameDocument.head.appendChild(style);
@@ -481,7 +492,15 @@
 
   function reloadPagePreview() {
     const frame = document.getElementById("page-editor-frame");
-    frame.onload = function () { installEditorSelection(frame); };
+    frame.onload = function () {
+      installEditorSelection(frame);
+      const updatePreviewStatus = function (detail) {
+        if (detail && detail.status === "error") setPageEditorStatus("A página não conseguiu carregar as alterações: " + detail.message, "error");
+      };
+      frame.contentWindow.addEventListener("managed-content-status", function (event) { updatePreviewStatus(event.detail); });
+      const root = frame.contentDocument.documentElement;
+      if (root.dataset.managedContentStatus) updatePreviewStatus({ status: root.dataset.managedContentStatus, message: root.dataset.managedContentDetail });
+    };
     frame.src = pageEditorPath + (pageEditorPath.includes("?") ? "&" : "?") + "admin_preview=editor&refresh=" + Date.now();
     pageEditorStarted = true;
   }
@@ -516,8 +535,10 @@
         if (!value) throw new Error("O texto não pode ficar vazio.");
       }
       await OfferDB.upsert("page_content", [{ selector: selectedPageElement.storageSelector, content_type: selectedPageElement.type, value: value, updated_at: new Date().toISOString() }], "selector", true);
-      setPageEditorStatus("Alteração publicada.", "success");
-      showToast("Página de vendas atualizada.");
+      const verification = await OfferDB.select("page_content", "select=selector,content_type,value&selector=eq." + encodeURIComponent(selectedPageElement.storageSelector), true);
+      if (!verification.length || verification[0].value !== value || verification[0].content_type !== selectedPageElement.type) throw new Error("A alteração foi enviada, mas o banco não confirmou o conteúdo publicado.");
+      setPageEditorStatus("Alteração salva e confirmada no banco.", "success");
+      showToast("Conteúdo publicado e verificado.");
       reloadPagePreview();
     } catch (error) { setPageEditorStatus(error.message, "error"); showToast(error.message, "error"); }
     finally { button.disabled = false; }

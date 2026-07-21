@@ -18,7 +18,7 @@
   }
 
   async function request(path, options) {
-    if (!configured()) throw new Error("Supabase ainda não foi configurado em supabase-config.js.");
+    if (!configured()) throw new Error("A conexão com o banco de dados não foi carregada.");
     const settings = options || {};
     const response = await fetch(config.url + path, {
       method: settings.method || "GET",
