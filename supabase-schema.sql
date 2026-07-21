@@ -61,6 +61,16 @@ create table if not exists public.site_events (
   event_data jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+create table if not exists public.site_presence (
+  session_id uuid primary key,
+  path text not null default '/',
+  active boolean not null default true,
+  last_seen timestamptz not null default now()
+);
+create index if not exists site_presence_active_last_seen_idx on public.site_presence(active,last_seen desc);
+alter table public.site_presence enable row level security;
+revoke all on public.site_presence from anon,authenticated;
 create index if not exists site_events_created_idx on public.site_events(created_at desc);
 create index if not exists site_events_type_created_idx on public.site_events(event_type,created_at desc);
 

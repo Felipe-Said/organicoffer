@@ -346,10 +346,24 @@
     }).catch(function () {});
   }
 
+  function reportPresence(active) {
+    if (!visitorSession || adminPreview) return;
+    fetch("/api/site-presence", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: visitorSession, path: location.pathname, active: active !== false }),
+      keepalive: true
+    }).catch(function () {});
+  }
+
   if (visitorSession && !adminPreview) {
     recordEvent("page_view");
     recordEvent("heartbeat");
     setInterval(function () { recordEvent("heartbeat"); }, 60000);
+    reportPresence(true);
+    setInterval(function () { if (document.visibilityState === "visible") reportPresence(true); }, 5000);
+    document.addEventListener("visibilitychange", function () { reportPresence(document.visibilityState === "visible"); });
+    window.addEventListener("pagehide", function () { reportPresence(false); });
 
     document.addEventListener("click", function (event) {
       const root = document.documentElement;

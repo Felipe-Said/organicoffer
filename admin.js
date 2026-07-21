@@ -15,6 +15,8 @@
   let clarityFrameReady = false;
   let clarityRefreshTimer = null;
   let clarityPeriod = "today";
+  let liveVisitorsTimer = null;
+  let liveVisitorsLoading = false;
 
   const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   const number = new Intl.NumberFormat("pt-BR");
@@ -297,10 +299,30 @@
     document.getElementById("stat-sales").textContent = number.format(Number(metrics.total_sales || 0));
     document.getElementById("stat-conversion").textContent = Number(metrics.conversion_rate || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + "%";
     document.getElementById("stat-checkout-clicks").textContent = number.format(Number(metrics.checkout_clicks || 0));
-    document.getElementById("live-counter").textContent = number.format(Number(metrics.live_visitors || 0));
     document.querySelectorAll(".metric-trend").forEach(function (trend) { trend.textContent = "Dados consolidados do banco"; });
     const sales = await OfferDB.rpc("admin_sales_last_7_days", {}, true);
     updateChart(sales);
+  }
+
+  async function loadLiveVisitors() {
+    if (liveVisitorsLoading || document.visibilityState !== "visible") return;
+    liveVisitorsLoading = true;
+    try {
+      const token = await OfferDB.auth.accessToken();
+      const response = await fetch("/api/live-visitors", { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Falha ao consultar visitantes.");
+      document.getElementById("live-counter").textContent = number.format(Number(payload.visitors || 0));
+    } catch (_) {
+      document.getElementById("live-counter").textContent = "—";
+    } finally { liveVisitorsLoading = false; }
+  }
+
+  function startLiveVisitors() {
+    if (liveVisitorsTimer) return;
+    loadLiveVisitors();
+    liveVisitorsTimer = setInterval(loadLiveVisitors, 1000);
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") loadLiveVisitors(); });
   }
 
   async function loadProductsForm() {
@@ -799,6 +821,7 @@
       document.getElementById("customer-state-filter").addEventListener("change", function () { populateCustomerRegionFilters(); renderCustomersTable(); });
       document.getElementById("customer-city-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
+      startLiveVisitors();
       await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings(), loadDeliverySettings()]);
     } catch (error) { showToast(error.message, "error"); }
   }
