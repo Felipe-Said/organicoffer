@@ -11,6 +11,10 @@
   let pageEditorStarted = false;
   let pageEditorPath = "/";
   let clarityStarted = false;
+  let clarityLoading = false;
+  let clarityFrameReady = false;
+  let clarityRefreshTimer = null;
+  let clarityPeriod = "today";
 
   const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   const number = new Intl.NumberFormat("pt-BR");
@@ -587,11 +591,44 @@
     document.getElementById("clarity-empty").hidden = clicks.length > 0;
   }
 
+  function clarityPeriodStart() {
+    const now = new Date();
+    if (clarityPeriod === "today") {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+    const durations = { "24h": 1, "7d": 7, "30d": 30, "90d": 90 };
+    return new Date(now.getTime() - (durations[clarityPeriod] || 1) * 86400000);
+  }
+
+  function stopClarityRealtime() {
+    if (clarityRefreshTimer) clearInterval(clarityRefreshTimer);
+    clarityRefreshTimer = null;
+  }
+
+  function startClarityRealtime() {
+    stopClarityRealtime();
+    loadClarityData();
+    clarityRefreshTimer = setInterval(function () {
+      if (document.getElementById("page-panel-clarity").classList.contains("active")) loadClarityData();
+    }, 10000);
+  }
+
+  function changeClarityPeriod(value) {
+    clarityPeriod = ["today", "24h", "7d", "30d", "90d"].includes(value) ? value : "today";
+    clarityFrameReady = false;
+    startClarityRealtime();
+  }
+
   async function loadClarityData() {
+    if (clarityLoading) return;
+    clarityLoading = true;
     const frame = document.getElementById("clarity-frame");
-    document.getElementById("clarity-click-count").textContent = "…";
+    const liveDot = document.getElementById("clarity-live-dot");
+    liveDot.classList.add("loading");
     try {
-      const since = new Date(Date.now() - 30 * 86400000).toISOString();
+      const since = clarityPeriodStart().toISOString();
       const events = await OfferDB.select("site_events", "select=session_id,event_type,event_data,created_at&event_type=in.(page_view,click,scroll_depth)&created_at=gte." + encodeURIComponent(since) + "&order=created_at.desc&limit=5000", true);
       const clicks = events.filter(function (event) { return event.event_type === "click"; });
       const scrolls = events.filter(function (event) { return event.event_type === "scroll_depth"; });
@@ -605,20 +642,36 @@
       document.getElementById("clarity-click-count").textContent = number.format(clicks.length);
       document.getElementById("clarity-scroll-average").textContent = average + "%";
       document.getElementById("clarity-session-count").textContent = number.format(sessions.size);
-      frame.onload = function () { setTimeout(function () { renderHeatmap(frame, events); }, 350); };
-      frame.src = "/?admin_preview=clarity&refresh=" + Date.now();
+      document.getElementById("clarity-last-update").textContent = "Atualizado às " + new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date());
+      if (!clarityFrameReady || !frame.contentDocument || !frame.contentDocument.body) {
+        frame.onload = function () {
+          clarityFrameReady = true;
+          setTimeout(function () { renderHeatmap(frame, events); }, 250);
+        };
+        frame.src = "/?admin_preview=clarity&refresh=" + Date.now();
+      } else renderHeatmap(frame, events);
       clarityStarted = true;
-    } catch (error) { showToast("Não foi possível carregar o mapa: " + error.message, "error"); }
+    } catch (error) {
+      document.getElementById("clarity-last-update").textContent = "Falha na atualização";
+      showToast("Não foi possível carregar o mapa: " + error.message, "error");
+    } finally {
+      clarityLoading = false;
+      liveDot.classList.remove("loading");
+    }
   }
 
   function openPagePanel(panel) {
     document.querySelectorAll("[data-page-panel]").forEach(function (control) { control.classList.toggle("active", control.dataset.pagePanel === panel); });
     document.querySelectorAll(".page-workspace-panel").forEach(function (element) { element.classList.toggle("active", element.id === "page-panel-" + panel); });
-    if (panel === "editor" && !pageEditorStarted) reloadPagePreview();
-    if (panel === "clarity" && !clarityStarted) loadClarityData();
+    if (panel === "editor") {
+      stopClarityRealtime();
+      if (!pageEditorStarted) reloadPagePreview();
+    }
+    if (panel === "clarity") startClarityRealtime();
   }
 
   function switchTab(tabId) {
+    if (tabId !== "page") stopClarityRealtime();
     document.querySelectorAll(".menu-item").forEach(function (item) { item.classList.toggle("active", item.dataset.tab === tabId); });
     document.querySelectorAll(".tab-content").forEach(function (tab) { tab.classList.toggle("active", tab.id === "tab-" + tabId); });
     const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", delivery: "Envio do E-book", page: "Página", settings: "Configurações do Funil" };
@@ -667,6 +720,7 @@
   window.savePageElement = savePageElement;
   window.resetPageElement = resetPageElement;
   window.loadClarityData = loadClarityData;
+  window.changeClarityPeriod = changeClarityPeriod;
   window.closeModal = closeModal;
   window.queueResendFromModal = queueResendFromModal;
   window.logoutAdmin = async function () { await OfferDB.auth.signOut(); location.replace("login.html"); };

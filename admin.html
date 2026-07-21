@@ -1014,6 +1014,13 @@
     .clarity-stat strong { font-family: var(--font-numeric); font-size: 22px; }
     .clarity-frame-wrap { position: relative; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: #ede8dc; }
     .clarity-legend { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted); }
+    .clarity-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .clarity-period { display: flex; align-items: center; gap: 8px; }
+    .clarity-period label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .clarity-period select { width: auto; min-width: 210px; padding: 9px 34px 9px 12px; }
+    .clarity-live { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; }
+    .clarity-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #1b6b3a; box-shadow: 0 0 0 4px rgba(27,107,58,.1); }
+    .clarity-live-dot.loading { background: #d4a017; box-shadow: 0 0 0 4px rgba(212,160,23,.12); }
     .clarity-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     .clarity-empty { padding: 22px; text-align: center; color: var(--text-muted); }
     .gateway-checker { margin-top: 22px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: var(--bg-primary); }
@@ -1036,7 +1043,7 @@
     .gateway-check-skeleton { height: 13px; border-radius: 5px; background: linear-gradient(90deg,var(--border-color),#f7f2e9,var(--border-color)); background-size: 200% 100%; animation: checker-shimmer 1.2s ease infinite; }
     @keyframes checker-shimmer { to { background-position: -200% 0; } }
     @media (max-width: 1050px) { .page-editor-layout { grid-template-columns: 1fr; } .editor-inspector { position: static; } }
-    @media (max-width: 700px) { .clarity-summary { grid-template-columns: 1fr; } .page-preview-frame { height: 620px; } }
+    @media (max-width: 700px) { .clarity-summary { grid-template-columns: 1fr; } .clarity-controls { align-items: stretch; flex-direction: column; } .clarity-period { align-items: stretch; flex-direction: column; } .clarity-period select { width: 100%; } .page-preview-frame { height: 620px; } }
     @media (max-width: 700px) { .gateway-checker-head { align-items: stretch; flex-direction: column; } .gateway-check-item { grid-template-columns: 24px 1fr; } .gateway-check-item span { grid-column: 2; } }
   </style>
 </head>
@@ -1528,6 +1535,19 @@
           </section>
 
           <section id="page-panel-clarity" class="page-workspace-panel">
+            <div class="clarity-controls">
+              <div class="clarity-period">
+                <label for="clarity-period-select">Período analisado</label>
+                <select id="clarity-period-select" class="form-control" onchange="changeClarityPeriod(this.value)">
+                  <option value="today">Hoje — reinicia à meia-noite</option>
+                  <option value="24h">Últimas 24 horas</option>
+                  <option value="7d">Últimos 7 dias</option>
+                  <option value="30d">Últimos 30 dias</option>
+                  <option value="90d">Últimos 90 dias</option>
+                </select>
+              </div>
+              <div class="clarity-live"><i id="clarity-live-dot" class="clarity-live-dot"></i><strong>Ao vivo</strong><span id="clarity-last-update">Aguardando dados</span></div>
+            </div>
             <div class="clarity-summary">
               <div class="clarity-stat"><span>Cliques analisados</span><strong id="clarity-click-count">—</strong></div>
               <div class="clarity-stat"><span>Profundidade média</span><strong id="clarity-scroll-average">—</strong></div>
@@ -1536,7 +1556,7 @@
             <div class="clarity-frame-wrap">
               <div class="page-preview-toolbar">
                 <div class="clarity-legend"><span><i class="clarity-dot" style="background:#cf3d27"></i>Muitos cliques</span><span><i class="clarity-dot" style="background:#eaa83b"></i>Alguns cliques</span></div>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="loadClarityData()"><i class="fa-solid fa-rotate"></i> Recarregar dados</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="loadClarityData(true)"><i class="fa-solid fa-rotate"></i> Atualizar agora</button>
               </div>
               <iframe id="clarity-frame" class="page-preview-frame" title="Mapa de comportamento da página de vendas"></iframe>
               <div id="clarity-empty" class="clarity-empty" hidden>Ainda não há cliques suficientes para montar o mapa.</div>
