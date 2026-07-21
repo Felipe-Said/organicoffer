@@ -55,12 +55,20 @@ create table if not exists public.app_settings (
 create table if not exists public.site_events (
   id bigint generated always as identity primary key,
   session_id uuid not null,
-  event_type text not null check (event_type in ('page_view','checkout_click','heartbeat')),
+  event_type text not null check (event_type in ('page_view','checkout_click','heartbeat','click','scroll_depth')),
   path text not null default '/',
+  event_data jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 create index if not exists site_events_created_idx on public.site_events(created_at desc);
 create index if not exists site_events_type_created_idx on public.site_events(event_type,created_at desc);
+
+create table if not exists public.page_content (
+  selector text primary key,
+  content_type text not null check (content_type in ('text','image')),
+  value text not null,
+  updated_at timestamptz not null default now()
+);
 
 create table if not exists public.email_delivery_jobs (
   id uuid primary key default gen_random_uuid(),
@@ -94,6 +102,10 @@ insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 values ('ebooks','ebooks',false,29360128,array['application/pdf'])
 on conflict (id) do update set public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values ('page-assets','page-assets',true,8388608,array['image/png','image/jpeg','image/webp','image/gif','image/avif'])
+on conflict (id) do update set public=true,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
+
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public
 as $$ select exists(select 1 from public.admin_profiles where user_id = (select auth.uid())) $$;
@@ -106,12 +118,21 @@ drop policy if exists "admins update ebooks" on storage.objects;
 create policy "admins update ebooks" on storage.objects for update to authenticated using (bucket_id='ebooks' and (select public.is_admin())) with check (bucket_id='ebooks' and (select public.is_admin()));
 drop policy if exists "admins delete ebooks" on storage.objects;
 create policy "admins delete ebooks" on storage.objects for delete to authenticated using (bucket_id='ebooks' and (select public.is_admin()));
+drop policy if exists "public reads page assets" on storage.objects;
+create policy "public reads page assets" on storage.objects for select to anon,authenticated using (bucket_id='page-assets');
+drop policy if exists "admins upload page assets" on storage.objects;
+create policy "admins upload page assets" on storage.objects for insert to authenticated with check (bucket_id='page-assets' and (select public.is_admin()));
+drop policy if exists "admins update page assets" on storage.objects;
+create policy "admins update page assets" on storage.objects for update to authenticated using (bucket_id='page-assets' and (select public.is_admin())) with check (bucket_id='page-assets' and (select public.is_admin()));
+drop policy if exists "admins delete page assets" on storage.objects;
+create policy "admins delete page assets" on storage.objects for delete to authenticated using (bucket_id='page-assets' and (select public.is_admin()));
 
 alter table public.admin_profiles enable row level security;
 alter table public.orders enable row level security;
 alter table public.offers enable row level security;
 alter table public.app_settings enable row level security;
 alter table public.site_events enable row level security;
+alter table public.page_content enable row level security;
 alter table public.email_delivery_jobs enable row level security;
 
 drop policy if exists "admin profiles self read" on public.admin_profiles;
@@ -130,13 +151,17 @@ drop policy if exists "public creates site events" on public.site_events;
 create policy "public creates site events" on public.site_events for insert to anon,authenticated with check (true);
 drop policy if exists "admins read site events" on public.site_events;
 create policy "admins read site events" on public.site_events for select to authenticated using ((select public.is_admin()));
+drop policy if exists "public reads page content" on public.page_content;
+create policy "public reads page content" on public.page_content for select to anon,authenticated using (true);
+drop policy if exists "admins manage page content" on public.page_content;
+create policy "admins manage page content" on public.page_content for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 drop policy if exists "admins manage delivery jobs" on public.email_delivery_jobs;
 create policy "admins manage delivery jobs" on public.email_delivery_jobs for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 
 grant usage on schema public to anon,authenticated;
 grant insert on public.orders,public.site_events to anon;
-grant select on public.offers to anon;
-grant select,insert,update,delete on public.admin_profiles,public.orders,public.offers,public.app_settings,public.site_events,public.email_delivery_jobs to authenticated;
+grant select on public.offers,public.page_content to anon;
+grant select,insert,update,delete on public.admin_profiles,public.orders,public.offers,public.app_settings,public.site_events,public.page_content,public.email_delivery_jobs to authenticated;
 grant usage,select on sequence public.site_events_id_seq to anon,authenticated;
 
 create or replace function public.admin_dashboard_metrics()

@@ -986,6 +986,39 @@
       cursor: pointer;
     }
   </style>
+  <style>
+    .menu-parent > a { justify-content: flex-start; }
+    .menu-parent .menu-chevron { margin-left: auto; font-size: 12px; transition: transform .25s ease; }
+    .menu-parent.open .menu-chevron { transform: rotate(180deg); }
+    .submenu { display: none; margin: 4px 0 2px 40px; border-left: 1px solid var(--border-color); padding-left: 10px; }
+    .menu-parent.open .submenu { display: grid; }
+    .submenu button { border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: 14px; text-align: left; padding: 9px 10px; border-radius: 7px; cursor: pointer; }
+    .submenu button:hover, .submenu button.active { color: var(--color-rust); background: rgba(194,82,26,.08); font-weight: 700; }
+    .page-workspace-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+    .page-workspace-tab { border: 0; background: transparent; padding: 12px 16px; color: var(--text-muted); font-weight: 700; cursor: pointer; border-bottom: 2px solid transparent; }
+    .page-workspace-tab.active { color: var(--color-rust); border-bottom-color: var(--color-rust); }
+    .page-workspace-panel { display: none; }
+    .page-workspace-panel.active { display: block; }
+    .page-editor-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 18px; align-items: start; }
+    .page-preview-shell { position: relative; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: #ede8dc; min-height: 720px; }
+    .page-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); font-size: 13px; color: var(--text-muted); }
+    .page-preview-frame { display: block; width: 100%; height: 720px; border: 0; background: white; }
+    .editor-inspector { position: sticky; top: 88px; border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; background: var(--bg-primary); }
+    .editor-empty { padding: 28px 10px; text-align: center; color: var(--text-muted); line-height: 1.6; }
+    .editor-empty i { display: block; font-size: 25px; margin-bottom: 10px; color: var(--color-rust); }
+    .editor-selected-path { font: 12px/1.45 var(--font-numeric); color: var(--text-muted); overflow-wrap: anywhere; background: var(--bg-secondary); padding: 8px; border-radius: 6px; margin-bottom: 14px; }
+    .editor-image-preview { width: 100%; max-height: 180px; object-fit: contain; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 12px; background: var(--bg-secondary); }
+    .clarity-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-bottom: 18px; }
+    .clarity-stat { border-top: 3px solid var(--color-rust); background: var(--bg-secondary); padding: 15px; border-radius: 7px; }
+    .clarity-stat span { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
+    .clarity-stat strong { font-family: var(--font-numeric); font-size: 22px; }
+    .clarity-frame-wrap { position: relative; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: #ede8dc; }
+    .clarity-legend { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted); }
+    .clarity-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .clarity-empty { padding: 22px; text-align: center; color: var(--text-muted); }
+    @media (max-width: 1050px) { .page-editor-layout { grid-template-columns: 1fr; } .editor-inspector { position: static; } }
+    @media (max-width: 700px) { .clarity-summary { grid-template-columns: 1fr; } .page-preview-frame { height: 620px; } }
+  </style>
 </head>
 <body>
 
@@ -1019,6 +1052,13 @@
       </li>
       <li class="menu-item" data-tab="delivery">
         <a><i class="fa-solid fa-paper-plane"></i>Envio</a>
+      </li>
+      <li class="menu-item menu-parent" data-tab="page">
+        <a><i class="fa-solid fa-file-pen"></i>Página<i class="fa-solid fa-chevron-down menu-chevron"></i></a>
+        <div class="submenu">
+          <button type="button" data-page-panel="editor">Editor</button>
+          <button type="button" data-page-panel="clarity">Clarity</button>
+        </div>
       </li>
       <li class="menu-item" data-tab="settings">
         <a><i class="fa-solid fa-sliders"></i>Configurações</a>
@@ -1413,6 +1453,65 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ================= PAGE TAB ================= -->
+      <div id="tab-page" class="tab-content">
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <h2>Gerenciamento da Página</h2>
+              <p style="font-size:13px;color:var(--text-muted);margin-top:6px;">Edite o conteúdo publicado e analise o comportamento real dos visitantes.</p>
+            </div>
+          </div>
+          <div class="page-workspace-tabs" role="tablist">
+            <button type="button" class="page-workspace-tab active" data-page-panel="editor">Editor</button>
+            <button type="button" class="page-workspace-tab" data-page-panel="clarity">Clarity</button>
+          </div>
+
+          <section id="page-panel-editor" class="page-workspace-panel active">
+            <div class="page-editor-layout">
+              <div class="page-preview-shell">
+                <div class="page-preview-toolbar"><span><i class="fa-solid fa-arrow-pointer"></i> Clique em qualquer texto ou imagem para editar</span><button type="button" class="btn btn-secondary btn-sm" onclick="reloadPagePreview()"><i class="fa-solid fa-rotate"></i> Atualizar</button></div>
+                <iframe id="page-editor-frame" class="page-preview-frame" title="Editor visual da página de vendas"></iframe>
+              </div>
+              <aside class="editor-inspector">
+                <div id="page-editor-empty" class="editor-empty"><i class="fa-solid fa-object-group"></i><strong>Nenhum elemento selecionado</strong><br>Selecione um texto ou imagem na página ao lado.</div>
+                <div id="page-editor-form" hidden>
+                  <div class="editor-selected-path" id="page-editor-selector"></div>
+                  <div id="page-editor-text-fields">
+                    <div class="form-group"><label for="page-editor-value">Texto publicado</label><textarea id="page-editor-value" class="form-control" rows="8"></textarea><p class="field-helper">O estilo e a posição atuais serão preservados.</p></div>
+                  </div>
+                  <div id="page-editor-image-fields" hidden>
+                    <img id="page-editor-image-preview" class="editor-image-preview" alt="Imagem selecionada">
+                    <div class="form-group"><label for="page-editor-image">Substituir imagem</label><input id="page-editor-image" type="file" class="form-control" accept="image/png,image/jpeg,image/webp,image/gif,image/avif"><p class="field-helper">PNG, JPG, WebP, GIF ou AVIF, até 8 MB.</p></div>
+                  </div>
+                  <p id="page-editor-status" class="field-status" role="status"></p>
+                  <div class="form-actions" style="justify-content:space-between;">
+                    <button type="button" class="btn btn-secondary" onclick="resetPageElement()"><i class="fa-solid fa-arrow-rotate-left"></i> Restaurar</button>
+                    <button type="button" class="btn btn-primary" id="save-page-element" onclick="savePageElement()"><i class="fa-solid fa-floppy-disk"></i> Publicar</button>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section id="page-panel-clarity" class="page-workspace-panel">
+            <div class="clarity-summary">
+              <div class="clarity-stat"><span>Cliques analisados</span><strong id="clarity-click-count">—</strong></div>
+              <div class="clarity-stat"><span>Profundidade média</span><strong id="clarity-scroll-average">—</strong></div>
+              <div class="clarity-stat"><span>Sessões no período</span><strong id="clarity-session-count">—</strong></div>
+            </div>
+            <div class="clarity-frame-wrap">
+              <div class="page-preview-toolbar">
+                <div class="clarity-legend"><span><i class="clarity-dot" style="background:#cf3d27"></i>Muitos cliques</span><span><i class="clarity-dot" style="background:#eaa83b"></i>Alguns cliques</span></div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="loadClarityData()"><i class="fa-solid fa-rotate"></i> Recarregar dados</button>
+              </div>
+              <iframe id="clarity-frame" class="page-preview-frame" title="Mapa de comportamento da página de vendas"></iframe>
+              <div id="clarity-empty" class="clarity-empty" hidden>Ainda não há cliques suficientes para montar o mapa.</div>
+            </div>
+          </section>
         </div>
       </div>
 

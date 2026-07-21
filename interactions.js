@@ -190,7 +190,24 @@
   const terms = order && order.querySelector("#terms-conditions-input");
   const fields = order ? Array.from(order.querySelectorAll("input[name], select[name]")) : [];
   const databaseReady = Boolean(window.OfferDB && OfferDB.configured());
+  const adminPreview = new URLSearchParams(location.search).has("admin_preview");
   let visitorSession = sessionStorage.getItem("oferta-organica-visitor-session");
+
+  async function loadManagedPageContent() {
+    if (!databaseReady) return;
+    try {
+      const rows = await OfferDB.select("page_content", "select=selector,content_type,value", false);
+      rows.forEach(function (row) {
+        let element;
+        try { element = document.querySelector(row.selector); } catch (_) { return; }
+        if (!element) return;
+        if (row.content_type === "image" && element.tagName === "IMG") element.src = row.value;
+        if (row.content_type === "text") element.textContent = row.value;
+      });
+    } catch (_) { /* A página original permanece disponível antes da migração ou durante indisponibilidade. */ }
+  }
+
+  loadManagedPageContent();
 
   async function loadLiveOfferPrices() {
     if (!databaseReady) return;
@@ -277,15 +294,44 @@
 
   showPaidDelivery();
 
-  function recordEvent(type) {
-    if (!databaseReady || !visitorSession) return Promise.resolve();
-    return OfferDB.insert("site_events", [{ session_id: visitorSession, event_type: type, path: location.pathname }], false).catch(function () {});
+  function recordEvent(type, eventData) {
+    if (!databaseReady || !visitorSession || adminPreview) return Promise.resolve();
+    return OfferDB.insert("site_events", [{ session_id: visitorSession, event_type: type, path: location.pathname, event_data: eventData || {} }], false).catch(function () {});
   }
 
-  if (databaseReady && visitorSession) {
+  if (databaseReady && visitorSession && !adminPreview) {
     recordEvent("page_view");
     recordEvent("heartbeat");
     setInterval(function () { recordEvent("heartbeat"); }, 60000);
+
+    document.addEventListener("click", function (event) {
+      const root = document.documentElement;
+      const target = event.target.closest && event.target.closest("a,button,input,label,img,h1,h2,h3,h4,p,li,span");
+      recordEvent("click", {
+        x_ratio: Math.max(0, Math.min(1, event.clientX / Math.max(root.clientWidth, 1))),
+        y_ratio: Math.max(0, Math.min(1, (window.scrollY + event.clientY) / Math.max(root.scrollHeight, 1))),
+        target: target ? (target.id ? "#" + target.id : target.tagName.toLowerCase()) : "unknown",
+        viewport_width: root.clientWidth,
+        page_height: root.scrollHeight
+      });
+    }, true);
+
+    const recordedDepths = new Set();
+    let scrollScheduled = false;
+    window.addEventListener("scroll", function () {
+      if (scrollScheduled) return;
+      scrollScheduled = true;
+      requestAnimationFrame(function () {
+        scrollScheduled = false;
+        const root = document.documentElement;
+        const percent = Math.min(100, Math.round(((window.scrollY + window.innerHeight) / Math.max(root.scrollHeight, 1)) * 100));
+        const milestone = Math.floor(percent / 10) * 10;
+        if (milestone >= 10 && !recordedDepths.has(milestone)) {
+          recordedDepths.add(milestone);
+          recordEvent("scroll_depth", { percent: milestone, page_height: root.scrollHeight });
+        }
+      });
+    }, { passive: true });
   }
 
   function scrollToOrder() {

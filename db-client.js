@@ -137,6 +137,12 @@
         headers: { Prefer: "return=representation" }
       });
     },
+    remove(table, filters, admin) {
+      return rest(table, filters, {
+        method: "DELETE", admin: Boolean(admin),
+        headers: { Prefer: "return=representation" }
+      });
+    },
     async rpc(name, args, admin) {
       const token = admin ? await adminToken() : null;
       return request("/rest/v1/rpc/" + name, { method: "POST", body: args || {}, token: token });

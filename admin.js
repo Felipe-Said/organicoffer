@@ -7,6 +7,9 @@
   let deliverySettings = {};
   let selectedEbookFile = null;
   let ebookObjectUrl = "";
+  let selectedPageElement = null;
+  let pageEditorStarted = false;
+  let clarityStarted = false;
 
   const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   const number = new Intl.NumberFormat("pt-BR");
@@ -371,11 +374,184 @@
     finally { button.disabled = false; }
   }
 
+  function pageElementSelector(element, root) {
+    if (element.id) return "#" + CSS.escape(element.id);
+    const parts = [];
+    let current = element;
+    while (current && current !== root.body && current !== root.documentElement) {
+      if (current.id) { parts.unshift("#" + CSS.escape(current.id)); break; }
+      const parent = current.parentElement;
+      if (!parent) break;
+      const sameTag = Array.from(parent.children).filter(function (child) { return child.tagName === current.tagName; });
+      parts.unshift(current.tagName.toLowerCase() + (sameTag.length > 1 ? ":nth-of-type(" + (sameTag.indexOf(current) + 1) + ")" : ""));
+      current = parent;
+    }
+    return parts.join(" > ");
+  }
+
+  function setPageEditorStatus(message, type) {
+    const status = document.getElementById("page-editor-status");
+    status.textContent = message || "";
+    status.className = "field-status" + (type ? " " + type : "");
+  }
+
+  function selectPageElement(element, frameDocument) {
+    if (!element || /^(HTML|BODY|SCRIPT|STYLE|SVG|PATH|IFRAME|FORM|INPUT|SELECT|TEXTAREA|BUTTON)$/.test(element.tagName)) return;
+    const isImage = element.tagName === "IMG";
+    selectedPageElement = {
+      selector: pageElementSelector(element, frameDocument),
+      type: isImage ? "image" : "text",
+      value: isImage ? element.currentSrc || element.src : element.textContent.trim()
+    };
+    document.getElementById("page-editor-empty").hidden = true;
+    document.getElementById("page-editor-form").hidden = false;
+    document.getElementById("page-editor-selector").textContent = selectedPageElement.selector;
+    document.getElementById("page-editor-text-fields").hidden = isImage;
+    document.getElementById("page-editor-image-fields").hidden = !isImage;
+    if (isImage) document.getElementById("page-editor-image-preview").src = selectedPageElement.value;
+    else document.getElementById("page-editor-value").value = selectedPageElement.value;
+    document.getElementById("page-editor-image").value = "";
+    setPageEditorStatus("");
+  }
+
+  function installEditorSelection(frame) {
+    const frameDocument = frame.contentDocument;
+    if (!frameDocument) return;
+    const style = frameDocument.createElement("style");
+    style.textContent = "[data-admin-edit-hover]{outline:3px solid #c2521a!important;outline-offset:2px!important;cursor:pointer!important}";
+    frameDocument.head.appendChild(style);
+    let hovered = null;
+    frameDocument.addEventListener("mouseover", function (event) {
+      const target = event.target.closest("img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small");
+      if (hovered) hovered.removeAttribute("data-admin-edit-hover");
+      hovered = target;
+      if (hovered) hovered.setAttribute("data-admin-edit-hover", "true");
+    }, true);
+    frameDocument.addEventListener("click", function (event) {
+      const target = event.target.closest("img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small");
+      if (!target) return;
+      event.preventDefault(); event.stopPropagation();
+      selectPageElement(target, frameDocument);
+    }, true);
+  }
+
+  function reloadPagePreview() {
+    const frame = document.getElementById("page-editor-frame");
+    frame.onload = function () { installEditorSelection(frame); };
+    frame.src = "/?admin_preview=editor&refresh=" + Date.now();
+    pageEditorStarted = true;
+  }
+
+  async function savePageElement() {
+    if (!selectedPageElement) return;
+    const button = document.getElementById("save-page-element");
+    button.disabled = true;
+    setPageEditorStatus("Publicando alteração...");
+    try {
+      let value;
+      if (selectedPageElement.type === "image") {
+        const file = document.getElementById("page-editor-image").files[0];
+        if (!file) throw new Error("Selecione a nova imagem.");
+        if (file.size > 8 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 8 MB.");
+        const extension = (file.name.split(".").pop() || "webp").toLowerCase().replace(/[^a-z0-9]/g, "");
+        let hash = 0;
+        for (let index = 0; index < selectedPageElement.selector.length; index += 1) hash = ((hash << 5) - hash + selectedPageElement.selector.charCodeAt(index)) | 0;
+        const path = "page/asset-" + Math.abs(hash) + "-" + Date.now() + "." + extension;
+        await OfferDB.storage.upload("page-assets", path, file);
+        value = window.SUPABASE_CONFIG.url + "/storage/v1/object/public/page-assets/" + path;
+      } else {
+        value = document.getElementById("page-editor-value").value.trim();
+        if (!value) throw new Error("O texto não pode ficar vazio.");
+      }
+      await OfferDB.upsert("page_content", [{ selector: selectedPageElement.selector, content_type: selectedPageElement.type, value: value, updated_at: new Date().toISOString() }], "selector", true);
+      setPageEditorStatus("Alteração publicada.", "success");
+      showToast("Página de vendas atualizada.");
+      reloadPagePreview();
+    } catch (error) { setPageEditorStatus(error.message, "error"); showToast(error.message, "error"); }
+    finally { button.disabled = false; }
+  }
+
+  async function resetPageElement() {
+    if (!selectedPageElement || !window.confirm("Restaurar este elemento ao conteúdo original da página?")) return;
+    try {
+      await OfferDB.remove("page_content", "selector=eq." + encodeURIComponent(selectedPageElement.selector), true);
+      showToast("Conteúdo original restaurado.");
+      selectedPageElement = null;
+      document.getElementById("page-editor-form").hidden = true;
+      document.getElementById("page-editor-empty").hidden = false;
+      reloadPagePreview();
+    } catch (error) { showToast(error.message, "error"); }
+  }
+
+  function renderHeatmap(frame, events) {
+    const frameDocument = frame.contentDocument;
+    if (!frameDocument) return;
+    const oldLayer = frameDocument.getElementById("admin-heatmap-layer");
+    if (oldLayer) oldLayer.remove();
+    const layer = frameDocument.createElement("div");
+    layer.id = "admin-heatmap-layer";
+    layer.style.cssText = "position:absolute;inset:0 0 auto 0;height:" + frameDocument.documentElement.scrollHeight + "px;pointer-events:none;z-index:2147483000;overflow:hidden";
+    const clicks = events.filter(function (event) { return event.event_type === "click" && event.event_data; });
+    const depthCounts = new Map();
+    events.filter(function (event) { return event.event_type === "scroll_depth" && event.event_data; }).forEach(function (event) {
+      const depth = Number(event.event_data.percent || 0);
+      depthCounts.set(depth, (depthCounts.get(depth) || 0) + 1);
+    });
+    const maximumDepthCount = Math.max(1, ...depthCounts.values());
+    depthCounts.forEach(function (count, depth) {
+      const band = frameDocument.createElement("div");
+      const opacity = .05 + (count / maximumDepthCount) * .14;
+      band.style.cssText = "position:absolute;left:0;right:0;height:10%;top:" + Math.max(0, depth - 10) + "%;background:linear-gradient(90deg,rgba(194,82,26," + opacity + "),rgba(234,168,59," + (opacity * .55) + "),transparent 78%);border-bottom:1px solid rgba(194,82,26,.18)";
+      layer.appendChild(band);
+    });
+    clicks.forEach(function (event) {
+      const data = event.event_data;
+      const dot = frameDocument.createElement("i");
+      dot.style.cssText = "position:absolute;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(207,61,39,.42);border:2px solid rgba(207,61,39,.78);box-shadow:0 0 0 9px rgba(234,168,59,.18);left:" + (Number(data.x_ratio || 0) * 100) + "%;top:" + (Number(data.y_ratio || 0) * 100) + "%";
+      layer.appendChild(dot);
+    });
+    frameDocument.body.appendChild(layer);
+    document.getElementById("clarity-empty").hidden = clicks.length > 0;
+  }
+
+  async function loadClarityData() {
+    const frame = document.getElementById("clarity-frame");
+    document.getElementById("clarity-click-count").textContent = "…";
+    try {
+      const since = new Date(Date.now() - 30 * 86400000).toISOString();
+      const events = await OfferDB.select("site_events", "select=session_id,event_type,event_data,created_at&event_type=in.(click,scroll_depth)&created_at=gte." + encodeURIComponent(since) + "&order=created_at.desc&limit=5000", true);
+      const clicks = events.filter(function (event) { return event.event_type === "click"; });
+      const scrolls = events.filter(function (event) { return event.event_type === "scroll_depth"; });
+      const sessions = new Set(events.map(function (event) { return event.session_id; }));
+      const sessionDepths = new Map();
+      scrolls.forEach(function (event) {
+        const depth = Number(event.event_data && event.event_data.percent || 0);
+        sessionDepths.set(event.session_id, Math.max(sessionDepths.get(event.session_id) || 0, depth));
+      });
+      const average = sessionDepths.size ? Math.round(Array.from(sessionDepths.values()).reduce(function (sum, depth) { return sum + depth; }, 0) / sessionDepths.size) : 0;
+      document.getElementById("clarity-click-count").textContent = number.format(clicks.length);
+      document.getElementById("clarity-scroll-average").textContent = average + "%";
+      document.getElementById("clarity-session-count").textContent = number.format(sessions.size);
+      frame.onload = function () { setTimeout(function () { renderHeatmap(frame, events); }, 350); };
+      frame.src = "/?admin_preview=clarity&refresh=" + Date.now();
+      clarityStarted = true;
+    } catch (error) { showToast("Não foi possível carregar o mapa: " + error.message, "error"); }
+  }
+
+  function openPagePanel(panel) {
+    document.querySelectorAll("[data-page-panel]").forEach(function (control) { control.classList.toggle("active", control.dataset.pagePanel === panel); });
+    document.querySelectorAll(".page-workspace-panel").forEach(function (element) { element.classList.toggle("active", element.id === "page-panel-" + panel); });
+    if (panel === "editor" && !pageEditorStarted) reloadPagePreview();
+    if (panel === "clarity" && !clarityStarted) loadClarityData();
+  }
+
   function switchTab(tabId) {
     document.querySelectorAll(".menu-item").forEach(function (item) { item.classList.toggle("active", item.dataset.tab === tabId); });
     document.querySelectorAll(".tab-content").forEach(function (tab) { tab.classList.toggle("active", tab.id === "tab-" + tabId); });
-    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", delivery: "Envio do E-book", settings: "Configurações do Funil" };
+    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", delivery: "Envio do E-book", page: "Página", settings: "Configurações do Funil" };
     document.getElementById("page-title-text").textContent = titles[tabId] || "Painel";
+    document.querySelector(".menu-parent").classList.toggle("open", tabId === "page");
+    if (tabId === "page") openPagePanel("editor");
     document.getElementById("sidebar").classList.remove("open");
   }
 
@@ -394,6 +570,7 @@
     try {
       const session = await verifyAdmin(); if (!session) return;
       document.querySelectorAll(".menu-item").forEach(function (item) { item.addEventListener("click", function () { switchTab(item.dataset.tab); }); });
+      document.querySelectorAll("[data-page-panel]").forEach(function (control) { control.addEventListener("click", function (event) { event.stopPropagation(); switchTab("page"); openPagePanel(control.dataset.pagePanel); }); });
       document.getElementById("menu-toggle").addEventListener("click", function () { document.getElementById("sidebar").classList.add("open"); });
       document.getElementById("order-search").addEventListener("input", renderOrdersTable);
       document.getElementById("order-status-filter").addEventListener("change", renderOrdersTable);
@@ -411,6 +588,10 @@
   window.saveDeliverySettings = saveDeliverySettings;
   window.chooseEbookFile = chooseEbookFile;
   window.deleteCurrentEbook = deleteCurrentEbook;
+  window.reloadPagePreview = reloadPagePreview;
+  window.savePageElement = savePageElement;
+  window.resetPageElement = resetPageElement;
+  window.loadClarityData = loadClarityData;
   window.closeModal = closeModal;
   window.queueResendFromModal = queueResendFromModal;
   window.logoutAdmin = async function () { await OfferDB.auth.signOut(); location.replace("login.html"); };
