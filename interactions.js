@@ -151,6 +151,19 @@
 
   translatePage();
 
+  const cityInput = document.querySelector("input[name='city']");
+  if (cityInput && !document.querySelector("input[name='state']")) {
+    const stateInput = cityInput.cloneNode(false);
+    stateInput.name = "state";
+    stateInput.id = "checkout-state";
+    stateInput.value = "";
+    stateInput.placeholder = "Estado (UF)...";
+    stateInput.autocomplete = "address-level1";
+    stateInput.maxLength = 80;
+    stateInput.removeAttribute("aria-invalid");
+    cityInput.insertAdjacentElement("afterend", stateInput);
+  }
+
   document.querySelectorAll('a[href="https://motherjubaremedies.com/tos-privacy-policy-mother-juba"]').forEach(function (link) {
     link.href = "/termos.html";
   });

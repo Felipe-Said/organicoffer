@@ -17,6 +17,7 @@ create table if not exists public.orders (
   phone text,
   address text,
   city text,
+  state text,
   country text,
   zipcode text,
   session_id uuid,

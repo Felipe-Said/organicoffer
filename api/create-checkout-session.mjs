@@ -10,12 +10,12 @@ export default async function handler(request, response) {
     const input = typeof request.body === "string" ? JSON.parse(request.body) : (request.body || {});
     const customer = {
       name: clean(input.name, 160), email: clean(input.email, 254).toLowerCase(), phone: clean(input.phone, 40),
-      address: clean(input.address), city: clean(input.city, 120), country: clean(input.country, 2).toUpperCase(),
+      address: clean(input.address), city: clean(input.city, 120), state: clean(input.state, 80), country: clean(input.country, 2).toUpperCase(),
       zipcode: clean(input.zipcode, 30), session_id: clean(input.session_id, 36)
     };
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(customer.session_id)) customer.session_id = "";
     if (!customer.name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) ||
-        customer.phone.replace(/\D/g, "").length < 8 || !customer.address || !customer.city ||
+        customer.phone.replace(/\D/g, "").length < 8 || !customer.address || !customer.city || !customer.state ||
         !/^[A-Z]{2}$/.test(customer.country) || !customer.zipcode) {
       return json(response, 400, { error: "Preencha corretamente os dados pessoais e o endereço." });
     }
@@ -37,7 +37,7 @@ export default async function handler(request, response) {
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: [{ customer_name: customer.name, email: customer.email, phone: customer.phone || null,
-        address: customer.address || null, city: customer.city || null, country: customer.country || null,
+        address: customer.address || null, city: customer.city || null, state: customer.state || null, country: customer.country || null,
         zipcode: customer.zipcode || null, session_id: customer.session_id || null,
         amount: amount, currency: "BRL",
         status: "pending", billing_type: mode }]
@@ -49,6 +49,7 @@ export default async function handler(request, response) {
     appendForm(customerParams, "phone", customer.phone);
     appendForm(customerParams, "address[line1]", customer.address);
     appendForm(customerParams, "address[city]", customer.city);
+    appendForm(customerParams, "address[state]", customer.state);
     appendForm(customerParams, "address[country]", customer.country);
     appendForm(customerParams, "address[postal_code]", customer.zipcode);
     appendForm(customerParams, "metadata[order_id]", order.id);

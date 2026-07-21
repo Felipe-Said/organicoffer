@@ -42,10 +42,20 @@
       name: row.customer_name,
       email: row.email,
       phone: row.phone || "—",
-      address: [row.address, row.city, row.country, row.zipcode].filter(Boolean).join(", ") || "—",
+      addressLine: row.address || "",
+      city: row.city || "",
+      state: row.state || "",
+      country: row.country || "",
+      zipcode: row.zipcode || "",
+      address: [row.address, row.city, row.state, row.country, row.zipcode].filter(Boolean).join(", ") || "—",
       date: dateTime.format(new Date(row.created_at)),
+      createdAt: row.created_at,
       amount: Number(row.amount || 0),
-      status: row.status
+      status: row.status,
+      billingType: row.billing_type || "payment",
+      stripeCustomerId: row.stripe_customer_id || "",
+      stripeSubscriptionId: row.stripe_subscription_id || "",
+      subscriptionStatus: row.subscription_status || ""
     };
   }
 
@@ -117,39 +127,124 @@
     const map = new Map();
     orders.forEach(function (order) {
       const key = order.email.toLowerCase();
-      const current = map.get(key) || { name: order.name, email: order.email, purchases: 0, sent: false };
-      if (order.status === "success") { current.purchases += 1; current.sent = true; }
+      const current = map.get(key) || {
+        name: order.name, email: order.email, phone: order.phone, address: order.address,
+        city: order.city, state: order.state, country: order.country, zipcode: order.zipcode,
+        purchases: 0, totalSpent: 0, sent: false, lastPurchase: order.date, subscriptions: []
+      };
+      if (order.status === "success") {
+        current.purchases += 1; current.totalSpent += order.amount; current.sent = true;
+      }
+      if (order.stripeSubscriptionId && !current.subscriptions.some(function (item) { return item.id === order.stripeSubscriptionId; })) {
+        current.subscriptions.push({ id: order.stripeSubscriptionId, orderId: order.id, status: order.subscriptionStatus || "active" });
+      }
       map.set(key, current);
     });
     customers = Array.from(map.values()).sort(function (a, b) { return a.name.localeCompare(b.name, "pt-BR"); });
+    populateCustomerRegionFilters();
+    renderCityRanking();
   }
 
+  function replaceSelectOptions(select, values, allLabel, selected) {
+    select.innerHTML = "";
+    const all = document.createElement("option"); all.value = "all"; all.textContent = allLabel; select.appendChild(all);
+    values.forEach(function (value) { const option = document.createElement("option"); option.value = value; option.textContent = value; select.appendChild(option); });
+    select.value = values.includes(selected) ? selected : "all";
+  }
+
+  function populateCustomerRegionFilters() {
+    const stateSelect = document.getElementById("customer-state-filter");
+    const citySelect = document.getElementById("customer-city-filter");
+    if (!stateSelect || !citySelect) return;
+    const selectedState = stateSelect.value;
+    const selectedCity = citySelect.value;
+    const states = Array.from(new Set(customers.map(function (item) { return item.state; }).filter(Boolean))).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    replaceSelectOptions(stateSelect, states, "Todos os estados", selectedState);
+    const activeState = stateSelect.value;
+    const cities = Array.from(new Set(customers.filter(function (item) { return activeState === "all" || item.state === activeState; }).map(function (item) { return item.city; }).filter(Boolean))).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    replaceSelectOptions(citySelect, cities, "Todas as cidades", selectedCity);
+  }
+
+  function addCustomerDetail(parent, label, value) {
+    const detail = document.createElement("div"); detail.className = "customer-detail";
+    const caption = document.createElement("span"); caption.textContent = label;
+    const content = document.createElement("strong"); content.textContent = value || "Não informado";
+    detail.append(caption, content); parent.appendChild(detail);
+  }
+
+  function subscriptionLabel(status) {
+    const labels = { active: "Assinatura ativa", trialing: "Em período de teste", past_due: "Pagamento atrasado", unpaid: "Não paga", canceled: "Assinatura cancelada", incomplete: "Incompleta", incomplete_expired: "Expirada" };
+    return labels[status] || status || "Assinatura";
+  }
+
+  function canCancelSubscription(status) { return ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(status); }
+
   function renderCustomersTable() {
-    const tbody = document.querySelector("#customers-table tbody");
+    const container = document.getElementById("customer-cards");
     const query = document.getElementById("customer-search").value.trim().toLowerCase();
+    const state = document.getElementById("customer-state-filter").value;
+    const city = document.getElementById("customer-city-filter").value;
     const filtered = customers.filter(function (customer) {
-      return !query || customer.email.toLowerCase().includes(query) || customer.name.toLowerCase().includes(query);
+      const matchesQuery = !query || customer.email.toLowerCase().includes(query) || customer.name.toLowerCase().includes(query) || customer.phone.toLowerCase().includes(query);
+      return matchesQuery && (state === "all" || customer.state === state) && (city === "all" || customer.city === city);
     });
-    if (!filtered.length) return emptyRow(tbody, 5, "Nenhum cliente encontrado no banco.");
-    tbody.innerHTML = "";
+    container.innerHTML = "";
+    if (!filtered.length) { const empty = document.createElement("div"); empty.className = "customer-empty"; empty.textContent = "Nenhum cliente corresponde aos filtros."; container.appendChild(empty); return; }
     filtered.forEach(function (customer) {
-      const row = document.createElement("tr");
-      row.innerHTML = "<td style='font-weight:700'></td><td style='color:var(--text-muted)'></td>" +
-        "<td style='font-family:var(--font-numeric);font-weight:700;text-align:center;width:120px'></td>" +
-        "<td style='width:180px'><span class='status-badge'></span></td><td style='text-align:right'></td>";
-      row.cells[0].textContent = customer.name; row.cells[1].textContent = customer.email;
-      row.cells[2].textContent = customer.purchases;
-      const badge = row.cells[3].querySelector("span");
-      badge.classList.add(customer.sent ? "success" : "failed"); badge.textContent = customer.sent ? "Sim (entregue)" : "Não";
-      const button = document.createElement("button");
-      button.className = "btn btn-secondary btn-sm"; button.innerHTML = '<i class="fa-solid fa-envelope"></i> Reenviar livro';
-      button.disabled = !customer.sent;
-      button.addEventListener("click", function () {
-        const order = orders.find(function (item) { return item.email.toLowerCase() === customer.email.toLowerCase() && item.status === "success"; });
-        if (order) queueEmailDelivery(order.id);
+      const card = document.createElement("article"); card.className = "customer-card";
+      const head = document.createElement("div"); head.className = "customer-card-head";
+      const identity = document.createElement("div"); const title = document.createElement("h3"); title.textContent = customer.name; const email = document.createElement("p"); email.textContent = customer.email; identity.append(title, email);
+      const purchaseBadge = document.createElement("span"); purchaseBadge.className = "status-badge success"; purchaseBadge.textContent = customer.purchases + (customer.purchases === 1 ? " compra" : " compras"); head.append(identity, purchaseBadge);
+      const details = document.createElement("div"); details.className = "customer-details";
+      addCustomerDetail(details, "Telefone", customer.phone);
+      addCustomerDetail(details, "Endereço", customer.address);
+      addCustomerDetail(details, "Cidade / Estado", [customer.city, customer.state].filter(Boolean).join(" / "));
+      addCustomerDetail(details, "CEP / País", [customer.zipcode, customer.country].filter(Boolean).join(" / "));
+      addCustomerDetail(details, "Total confirmado", money.format(customer.totalSpent));
+      addCustomerDetail(details, "Última compra", customer.lastPurchase);
+      card.append(head, details);
+      customer.subscriptions.forEach(function (subscription) {
+        const section = document.createElement("div"); section.className = "customer-subscription";
+        const badge = document.createElement("span"); badge.className = "status-badge " + (canCancelSubscription(subscription.status) ? "success" : "failed"); badge.textContent = subscriptionLabel(subscription.status); section.appendChild(badge);
+        if (canCancelSubscription(subscription.status)) {
+          const cancel = document.createElement("button"); cancel.className = "btn btn-secondary btn-sm"; cancel.innerHTML = '<i class="fa-solid fa-ban"></i> Cancelar assinatura';
+          cancel.addEventListener("click", function () { cancelCustomerSubscription(subscription.orderId, cancel); }); section.appendChild(cancel);
+        }
+        card.appendChild(section);
       });
-      row.cells[4].appendChild(button); tbody.appendChild(row);
+      container.appendChild(card);
     });
+  }
+
+  function renderCityRanking() {
+    const list = document.getElementById("customer-city-ranking"); if (!list) return;
+    const grouped = new Map();
+    orders.filter(function (order) { return order.status === "success" && order.city; }).forEach(function (order) {
+      const key = order.city + "|" + order.state; const current = grouped.get(key) || { city: order.city, state: order.state, sales: 0, revenue: 0 };
+      current.sales += 1; current.revenue += order.amount; grouped.set(key, current);
+    });
+    const ranking = Array.from(grouped.values()).sort(function (a, b) { return b.sales - a.sales || b.revenue - a.revenue; }).slice(0, 5);
+    list.innerHTML = "";
+    if (!ranking.length) { const empty = document.createElement("li"); empty.className = "clarity-empty"; empty.textContent = "Ainda não há cidades com compras confirmadas."; list.appendChild(empty); return; }
+    ranking.forEach(function (item, index) {
+      const row = document.createElement("li"); row.className = "city-ranking-item";
+      const position = document.createElement("span"); position.className = "city-ranking-position"; position.textContent = index + 1;
+      const place = document.createElement("div"); place.className = "city-ranking-name"; const city = document.createElement("strong"); city.textContent = item.city; const state = document.createElement("span"); state.textContent = item.state || "Estado não informado"; place.append(city, state);
+      const total = document.createElement("span"); total.className = "city-ranking-total"; total.textContent = item.sales + (item.sales === 1 ? " compra" : " compras"); row.append(position, place, total); list.appendChild(row);
+    });
+  }
+
+  async function cancelCustomerSubscription(orderId, button) {
+    const order = orders.find(function (item) { return item.id === orderId; });
+    if (!order || !order.stripeSubscriptionId || !window.confirm("Cancelar esta assinatura imediatamente na Stripe? O cliente não receberá novas cobranças.")) return;
+    const original = button.innerHTML; button.disabled = true; button.textContent = "Cancelando...";
+    try {
+      const token = await OfferDB.auth.accessToken();
+      const response = await fetch("/api/cancel-subscription", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ order_id: orderId }) });
+      const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "Não foi possível cancelar a assinatura.");
+      orders.forEach(function (item) { if (item.stripeSubscriptionId === order.stripeSubscriptionId) item.subscriptionStatus = payload.subscription_status || "canceled"; });
+      buildCustomers(); renderCustomersTable(); showToast("Assinatura cancelada na Stripe.");
+    } catch (error) { button.disabled = false; button.innerHTML = original; showToast(error.message, "error"); }
   }
 
   async function queueEmailDelivery(orderId) {
@@ -701,6 +796,8 @@
       document.getElementById("order-search").addEventListener("input", renderOrdersTable);
       document.getElementById("order-status-filter").addEventListener("change", renderOrdersTable);
       document.getElementById("customer-search").addEventListener("input", renderCustomersTable);
+      document.getElementById("customer-state-filter").addEventListener("change", function () { populateCustomerRegionFilters(); renderCustomersTable(); });
+      document.getElementById("customer-city-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
       await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings(), loadDeliverySettings()]);
     } catch (error) { showToast(error.message, "error"); }

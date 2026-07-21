@@ -1021,6 +1021,29 @@
     .clarity-live { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; }
     .clarity-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #1b6b3a; box-shadow: 0 0 0 4px rgba(27,107,58,.1); }
     .clarity-live-dot.loading { background: #d4a017; box-shadow: 0 0 0 4px rgba(212,160,23,.12); }
+    .customer-filters { display: grid; grid-template-columns: minmax(240px,1fr) 190px 220px; gap: 12px; margin-bottom: 18px; }
+    .customer-layout { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 18px; align-items: start; }
+    .customer-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+    .customer-card { border: 1px solid var(--border-color); border-top: 3px solid var(--color-rust); border-radius: 9px; background: #fff; padding: 18px; min-width: 0; }
+    .customer-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .customer-card-head h3 { font-family: var(--font-heading); font-size: 18px; margin-bottom: 4px; }
+    .customer-card-head p { color: var(--text-muted); font-size: 13px; overflow-wrap: anywhere; }
+    .customer-details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .customer-detail { min-width: 0; }
+    .customer-detail span { display: block; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+    .customer-detail strong { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+    .customer-subscription { margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .customer-ranking { border: 1px solid var(--border-color); border-radius: 9px; background: var(--bg-secondary); padding: 18px; position: sticky; top: 86px; }
+    .customer-ranking h3 { font-family: var(--font-heading); font-size: 17px; margin-bottom: 4px; }
+    .customer-ranking > p { color: var(--text-muted); font-size: 12px; margin-bottom: 14px; }
+    .city-ranking-list { list-style: none; display: grid; gap: 9px; }
+    .city-ranking-item { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 9px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-color); }
+    .city-ranking-position { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #fff; color: var(--color-rust); font-family: var(--font-numeric); font-weight: 700; }
+    .city-ranking-name strong,.city-ranking-name span { display: block; }
+    .city-ranking-name strong { font-size: 13px; }
+    .city-ranking-name span { color: var(--text-muted); font-size: 11px; }
+    .city-ranking-total { font-family: var(--font-numeric); font-weight: 700; font-size: 12px; }
+    .customer-empty { grid-column: 1/-1; padding: 48px 20px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 9px; }
     .clarity-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     .clarity-empty { padding: 22px; text-align: center; color: var(--text-muted); }
     .gateway-checker { margin-top: 22px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: var(--bg-primary); }
@@ -1042,8 +1065,8 @@
     .gateway-check-item span { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
     .gateway-check-skeleton { height: 13px; border-radius: 5px; background: linear-gradient(90deg,var(--border-color),#f7f2e9,var(--border-color)); background-size: 200% 100%; animation: checker-shimmer 1.2s ease infinite; }
     @keyframes checker-shimmer { to { background-position: -200% 0; } }
-    @media (max-width: 1050px) { .page-editor-layout { grid-template-columns: 1fr; } .editor-inspector { position: static; } }
-    @media (max-width: 700px) { .clarity-summary { grid-template-columns: 1fr; } .clarity-controls { align-items: stretch; flex-direction: column; } .clarity-period { align-items: stretch; flex-direction: column; } .clarity-period select { width: 100%; } .page-preview-frame { height: 620px; } }
+    @media (max-width: 1050px) { .page-editor-layout,.customer-layout { grid-template-columns: 1fr; } .editor-inspector,.customer-ranking { position: static; } }
+    @media (max-width: 700px) { .clarity-summary,.customer-filters,.customer-grid { grid-template-columns: 1fr; } .clarity-controls { align-items: stretch; flex-direction: column; } .clarity-period { align-items: stretch; flex-direction: column; } .clarity-period select { width: 100%; } .page-preview-frame { height: 620px; } .customer-details { grid-template-columns: 1fr; } .customer-subscription { align-items: stretch; flex-direction: column; } }
     @media (max-width: 700px) { .gateway-checker-head { align-items: stretch; flex-direction: column; } .gateway-check-item { grid-template-columns: 24px 1fr; } .gateway-check-item span { grid-column: 2; } }
   </style>
 </head>
@@ -1372,28 +1395,21 @@
       <!-- ================= CUSTOMERS TAB ================= -->
       <div id="tab-customers" class="tab-content">
         <div class="card">
-          <div class="filter-bar">
+          <div class="customer-filters">
             <div class="search-wrapper">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" class="search-input" id="customer-search" placeholder="Buscar clientes por nome ou e-mail...">
+              <input type="text" class="search-input" id="customer-search" placeholder="Buscar por nome, e-mail ou telefone...">
             </div>
+            <select id="customer-state-filter" class="form-control" aria-label="Filtrar clientes por estado"><option value="all">Todos os estados</option></select>
+            <select id="customer-city-filter" class="form-control" aria-label="Filtrar clientes por cidade"><option value="all">Todas as cidades</option></select>
           </div>
-
-          <div class="table-responsive">
-            <table id="customers-table">
-              <thead>
-                <tr>
-                  <th>Nome do Cliente</th>
-                  <th>E-mail</th>
-                  <th>Total Compras</th>
-                  <th>E-book Enviado</th>
-                  <th style="text-align: right;">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Dinâmico via JS -->
-              </tbody>
-            </table>
+          <div class="customer-layout">
+            <div id="customer-cards" class="customer-grid"></div>
+            <aside class="customer-ranking">
+              <h3>Top 5 cidades</h3>
+              <p>Cidades com mais compras confirmadas.</p>
+              <ol id="customer-city-ranking" class="city-ranking-list"></ol>
+            </aside>
           </div>
         </div>
       </div>
