@@ -272,6 +272,48 @@
     finally { button.disabled = false; }
   }
 
+  function renderGatewayHealth(payload) {
+    const summary = document.getElementById("gateway-health-summary");
+    const list = document.getElementById("gateway-check-list");
+    const state = payload.ready ? (payload.receiving_sales ? "ok" : "warning") : "error";
+    const icon = state === "ok" ? "fa-circle-check" : state === "warning" ? "fa-triangle-exclamation" : "fa-circle-xmark";
+    summary.className = "gateway-health-summary visible " + state;
+    summary.innerHTML = "<i class=\"fa-solid " + icon + "\"></i><span></span>";
+    summary.querySelector("span").textContent = payload.summary;
+    list.replaceChildren();
+    (payload.checks || []).forEach(function (check) {
+      const item = document.createElement("li");
+      item.className = "gateway-check-item " + check.status;
+      const checkIcon = check.status === "ok" ? "fa-circle-check" : check.status === "warning" ? "fa-triangle-exclamation" : "fa-circle-xmark";
+      item.innerHTML = "<i class=\"fa-solid " + checkIcon + "\"></i><strong></strong><span></span>";
+      item.querySelector("strong").textContent = check.label;
+      item.querySelector("span").textContent = check.detail;
+      list.appendChild(item);
+    });
+  }
+
+  async function checkGatewayHealth() {
+    const button = document.getElementById("check-gateway-button");
+    const summary = document.getElementById("gateway-health-summary");
+    const list = document.getElementById("gateway-check-list");
+    button.disabled = true;
+    button.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Verificando';
+    summary.className = "gateway-health-summary";
+    list.innerHTML = '<li class="gateway-check-item"><i class="fa-solid fa-stethoscope" style="color:var(--color-rust)"></i><strong>Executando diagnóstico</strong><span class="gateway-check-skeleton"></span></li>';
+    try {
+      const token = await OfferDB.auth.accessToken();
+      const response = await fetch("/api/gateway-health", { headers: { Authorization: "Bearer " + token, Accept: "application/json" } });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Não foi possível verificar o gateway.");
+      renderGatewayHealth(payload);
+    } catch (error) {
+      renderGatewayHealth({ ready: false, receiving_sales: false, summary: "O diagnóstico não pôde ser concluído.", checks: [{ label: "Falha na verificação", status: "error", detail: error.message }] });
+    } finally {
+      button.disabled = false;
+      button.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verificar novamente';
+    }
+  }
+
   function renderEbookPreview(url, fileName, fileSize) {
     const preview = document.getElementById("ebook-preview");
     const empty = document.getElementById("ebook-empty");
@@ -585,6 +627,7 @@
   window.resetProductsForm = loadProductsForm;
   window.saveSettings = saveSettings;
   window.saveGatewaySettings = saveGatewaySettings;
+  window.checkGatewayHealth = checkGatewayHealth;
   window.saveDeliverySettings = saveDeliverySettings;
   window.chooseEbookFile = chooseEbookFile;
   window.deleteCurrentEbook = deleteCurrentEbook;

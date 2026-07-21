@@ -107,6 +107,11 @@
         return session;
       },
       getSession: getSession,
+      async accessToken() {
+        const session = await getSession();
+        if (!session || !session.access_token) throw new Error("Sessão administrativa expirada.");
+        return session.access_token;
+      },
       async signOut() {
         const session = readSession();
         if (session && session.access_token) {

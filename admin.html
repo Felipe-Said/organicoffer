@@ -1016,8 +1016,28 @@
     .clarity-legend { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted); }
     .clarity-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     .clarity-empty { padding: 22px; text-align: center; color: var(--text-muted); }
+    .gateway-checker { margin-top: 22px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: var(--bg-primary); }
+    .gateway-checker-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; background: var(--bg-secondary); }
+    .gateway-checker-title { display: flex; gap: 12px; align-items: flex-start; }
+    .gateway-checker-title > i { color: var(--color-rust); font-size: 20px; margin-top: 2px; }
+    .gateway-checker-title p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+    .gateway-health-summary { display: none; padding: 15px 20px; border-top: 1px solid var(--border-color); font-weight: 700; }
+    .gateway-health-summary.visible { display: flex; align-items: center; gap: 9px; }
+    .gateway-health-summary.ok { color: var(--color-green); background: rgba(27,107,58,.07); }
+    .gateway-health-summary.warning { color: #94630d; background: rgba(234,168,59,.1); }
+    .gateway-health-summary.error { color: #a33127; background: rgba(206,55,46,.08); }
+    .gateway-check-list { list-style: none; margin: 0; padding: 0; }
+    .gateway-check-item { display: grid; grid-template-columns: 24px minmax(150px,220px) 1fr; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border-color); align-items: start; }
+    .gateway-check-item i { margin-top: 2px; }
+    .gateway-check-item.ok i { color: var(--color-green); }
+    .gateway-check-item.warning i { color: #b77a11; }
+    .gateway-check-item.error i { color: #b23a2d; }
+    .gateway-check-item span { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+    .gateway-check-skeleton { height: 13px; border-radius: 5px; background: linear-gradient(90deg,var(--border-color),#f7f2e9,var(--border-color)); background-size: 200% 100%; animation: checker-shimmer 1.2s ease infinite; }
+    @keyframes checker-shimmer { to { background-position: -200% 0; } }
     @media (max-width: 1050px) { .page-editor-layout { grid-template-columns: 1fr; } .editor-inspector { position: static; } }
     @media (max-width: 700px) { .clarity-summary { grid-template-columns: 1fr; } .page-preview-frame { height: 620px; } }
+    @media (max-width: 700px) { .gateway-checker-head { align-items: stretch; flex-direction: column; } .gateway-check-item { grid-template-columns: 24px 1fr; } .gateway-check-item span { grid-column: 2; } }
   </style>
 </head>
 <body>
@@ -1406,6 +1426,16 @@
             <p style="font-weight:700;margin-bottom:6px;"><i class="fa-solid fa-shield-halved" style="color:var(--color-green);margin-right:7px;"></i>Chaves protegidas pela Vercel</p>
             <p style="font-size:13px;color:var(--text-muted);line-height:1.55;">Configure <strong>STRIPE_SECRET_KEY</strong> e <strong>STRIPE_WEBHOOK_SECRET</strong> nas variáveis de ambiente. A chave secreta nunca é salva ou exibida no navegador.</p>
           </div>
+          <section class="gateway-checker" aria-labelledby="gateway-checker-heading">
+            <div class="gateway-checker-head">
+              <div class="gateway-checker-title"><i class="fa-solid fa-stethoscope"></i><div><h3 id="gateway-checker-heading">Diagnóstico do gateway</h3><p>Confere a conexão com a Stripe, webhook, oferta e confirmações de venda.</p></div></div>
+              <button type="button" class="btn btn-secondary" id="check-gateway-button" onclick="checkGatewayHealth()"><i class="fa-solid fa-circle-check"></i> Verificar agora</button>
+            </div>
+            <div id="gateway-health-summary" class="gateway-health-summary" role="status" aria-live="polite"></div>
+            <ul id="gateway-check-list" class="gateway-check-list">
+              <li class="gateway-check-item"><i class="fa-solid fa-minus" style="color:var(--text-muted)"></i><strong>Aguardando verificação</strong><span>Clique em “Verificar agora” para executar o diagnóstico no servidor.</span></li>
+            </ul>
+          </section>
           <div class="form-actions">
             <button class="btn btn-primary" id="save-gateway-button" onclick="saveGatewaySettings()"><i class="fa-solid fa-floppy-disk"></i> Salvar Gateway</button>
           </div>

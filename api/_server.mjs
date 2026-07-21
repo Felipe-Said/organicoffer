@@ -28,6 +28,23 @@ export async function supabase(path, options = {}) {
   return payload;
 }
 
+export async function requireAdmin(request) {
+  const authorization = String(request.headers.authorization || "");
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
+  if (!token) throw new Error("Sessão administrativa ausente.");
+  const url = env("SUPABASE_URL", ["NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL"]);
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) throw new Error("Supabase do servidor não configurado.");
+  const userResponse = await fetch(url + "/auth/v1/user", {
+    headers: { apikey: serviceKey, Authorization: "Bearer " + token }
+  });
+  const user = await userResponse.json();
+  if (!userResponse.ok || !user.id) throw new Error("Sessão administrativa inválida.");
+  const profiles = await supabase("admin_profiles?select=user_id,email&user_id=eq." + encodeURIComponent(user.id) + "&limit=1");
+  if (!profiles.length) throw new Error("Usuário sem permissão administrativa.");
+  return user;
+}
+
 export async function stripe(path, options = {}) {
   const secret = env("STRIPE_SECRET_KEY");
   if (!secret) throw new Error("STRIPE_SECRET_KEY não configurada na Vercel.");
