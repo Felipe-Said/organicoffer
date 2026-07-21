@@ -219,9 +219,10 @@
   installStableEditorKeys();
 
   async function loadManagedPageContent() {
-    if (!databaseReady) { reportManagedContent("error", "A conexão com o banco não foi carregada."); return; }
     try {
-      const rows = await OfferDB.select("page_content", "select=selector,content_type,value", false);
+      const response = await fetch("/api/page-content", { cache: "no-store" });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.error || "Não foi possível carregar as alterações.");
       let applied = 0;
       rows.filter(function (row) { return !row.selector.startsWith("legal::"); }).forEach(function (row) {
         let element;

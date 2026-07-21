@@ -74,11 +74,12 @@
   }
 
   async function loadManagedContent() {
-    if (!window.OfferDB || !OfferDB.configured()) { reportManagedContent("error", "A conexão com o banco não foi carregada."); return; }
     try {
-      const rows = await OfferDB.select("page_content", "select=selector,content_type,value&selector=like.legal::*", false);
+      const response = await fetch("/api/page-content", { cache: "no-store" });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.error || "Não foi possível carregar as alterações.");
       let applied = 0;
-      rows.forEach(function (row) {
+      rows.filter(function (row) { return row.selector.startsWith("legal::"); }).forEach(function (row) {
         const selector = row.selector.slice(7);
         let element;
         try { element = document.querySelector(selector); } catch (_) { return; }
