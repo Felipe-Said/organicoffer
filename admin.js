@@ -791,7 +791,7 @@
     if (tabId !== "page") stopClarityRealtime();
     document.querySelectorAll(".menu-item").forEach(function (item) { item.classList.toggle("active", item.dataset.tab === tabId); });
     document.querySelectorAll(".tab-content").forEach(function (tab) { tab.classList.toggle("active", tab.id === "tab-" + tabId); });
-    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", delivery: "Envio do E-book", page: "Página", settings: "Configurações do Funil" };
+    const titles = { dashboard: "Visão Geral", orders: "Pedidos & Vendas", products: "Produtos & Ofertas", customers: "Gerenciamento de Clientes", gateways: "Gateways de Pagamento", delivery: "Envio do E-book", page: "Página", blog: "Blog", settings: "Configurações do Funil" };
     document.getElementById("page-title-text").textContent = titles[tabId] || "Painel";
     document.querySelector(".menu-parent").classList.toggle("open", tabId === "page");
     if (tabId === "page") openPagePanel("editor");
