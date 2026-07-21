@@ -180,7 +180,7 @@
   const offerPriceStyle = document.createElement("style");
   offerPriceStyle.textContent = [
     ".paragraph-zZDNJDykY54.text-output{font-size:44px!important;white-space:nowrap}",
-    "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:32px!important}}"
+    "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
 
