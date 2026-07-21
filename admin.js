@@ -9,6 +9,7 @@
   let ebookObjectUrl = "";
   let selectedPageElement = null;
   let pageEditorStarted = false;
+  let pageEditorPath = "/";
   let clarityStarted = false;
 
   const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -442,6 +443,7 @@
     const isImage = element.tagName === "IMG";
     selectedPageElement = {
       selector: pageElementSelector(element, frameDocument),
+      storageSelector: (pageEditorPath === "/termos.html" ? "legal::" : "") + pageElementSelector(element, frameDocument),
       type: isImage ? "image" : "text",
       value: isImage ? element.currentSrc || element.src : element.textContent.trim()
     };
@@ -480,8 +482,16 @@
   function reloadPagePreview() {
     const frame = document.getElementById("page-editor-frame");
     frame.onload = function () { installEditorSelection(frame); };
-    frame.src = "/?admin_preview=editor&refresh=" + Date.now();
+    frame.src = pageEditorPath + (pageEditorPath.includes("?") ? "&" : "?") + "admin_preview=editor&refresh=" + Date.now();
     pageEditorStarted = true;
+  }
+
+  function changePageEditorSource(value) {
+    pageEditorPath = value === "/termos.html" ? value : "/";
+    selectedPageElement = null;
+    document.getElementById("page-editor-form").hidden = true;
+    document.getElementById("page-editor-empty").hidden = false;
+    reloadPagePreview();
   }
 
   async function savePageElement() {
@@ -497,7 +507,7 @@
         if (file.size > 8 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 8 MB.");
         const extension = (file.name.split(".").pop() || "webp").toLowerCase().replace(/[^a-z0-9]/g, "");
         let hash = 0;
-        for (let index = 0; index < selectedPageElement.selector.length; index += 1) hash = ((hash << 5) - hash + selectedPageElement.selector.charCodeAt(index)) | 0;
+        for (let index = 0; index < selectedPageElement.storageSelector.length; index += 1) hash = ((hash << 5) - hash + selectedPageElement.storageSelector.charCodeAt(index)) | 0;
         const path = "page/asset-" + Math.abs(hash) + "-" + Date.now() + "." + extension;
         await OfferDB.storage.upload("page-assets", path, file);
         value = window.SUPABASE_CONFIG.url + "/storage/v1/object/public/page-assets/" + path;
@@ -505,7 +515,7 @@
         value = document.getElementById("page-editor-value").value.trim();
         if (!value) throw new Error("O texto não pode ficar vazio.");
       }
-      await OfferDB.upsert("page_content", [{ selector: selectedPageElement.selector, content_type: selectedPageElement.type, value: value, updated_at: new Date().toISOString() }], "selector", true);
+      await OfferDB.upsert("page_content", [{ selector: selectedPageElement.storageSelector, content_type: selectedPageElement.type, value: value, updated_at: new Date().toISOString() }], "selector", true);
       setPageEditorStatus("Alteração publicada.", "success");
       showToast("Página de vendas atualizada.");
       reloadPagePreview();
@@ -516,7 +526,7 @@
   async function resetPageElement() {
     if (!selectedPageElement || !window.confirm("Restaurar este elemento ao conteúdo original da página?")) return;
     try {
-      await OfferDB.remove("page_content", "selector=eq." + encodeURIComponent(selectedPageElement.selector), true);
+      await OfferDB.remove("page_content", "selector=eq." + encodeURIComponent(selectedPageElement.storageSelector), true);
       showToast("Conteúdo original restaurado.");
       selectedPageElement = null;
       document.getElementById("page-editor-form").hidden = true;
@@ -632,6 +642,7 @@
   window.chooseEbookFile = chooseEbookFile;
   window.deleteCurrentEbook = deleteCurrentEbook;
   window.reloadPagePreview = reloadPagePreview;
+  window.changePageEditorSource = changePageEditorSource;
   window.savePageElement = savePageElement;
   window.resetPageElement = resetPageElement;
   window.loadClarityData = loadClarityData;

@@ -151,6 +151,10 @@
 
   translatePage();
 
+  document.querySelectorAll('a[href="https://motherjubaremedies.com/tos-privacy-policy-mother-juba"]').forEach(function (link) {
+    link.href = "/termos.html";
+  });
+
   function replaceTextContent(transform) {
     document.querySelectorAll("body *").forEach(function (element) {
       if (/^(STYLE|SCRIPT|SVG|PATH|TEMPLATE|OBJECT)$/.test(element.tagName)) return;
