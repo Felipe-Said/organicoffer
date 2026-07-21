@@ -161,15 +161,28 @@
   }
 
   function convertPageCurrencyToReal() {
+    function normalizeCurrency(text) {
+      return text
+        .replace(/US\$\s*/g, "R$ ")
+        .replace(/(^|[^R])\$(?=\s*\d)/g, function (_, prefix) { return prefix + "R$"; })
+        .replace(/R{2,}\$/g, "R$");
+    }
     replaceTextContent(function (text) {
-      return text.replace(/US\$\s*/g, "R$ ").replace(/\$(?=\s*\d)/g, "R$ ");
+      return normalizeCurrency(text);
     });
     document.querySelectorAll("[aria-label]").forEach(function (element) {
-      element.setAttribute("aria-label", element.getAttribute("aria-label").replace(/US\$\s*/g, "R$ ").replace(/\$(?=\s*\d)/g, "R$ "));
+      element.setAttribute("aria-label", normalizeCurrency(element.getAttribute("aria-label")));
     });
   }
 
   convertPageCurrencyToReal();
+
+  const offerPriceStyle = document.createElement("style");
+  offerPriceStyle.textContent = [
+    ".paragraph-zZDNJDykY54.text-output{font-size:44px!important;white-space:nowrap}",
+    "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:32px!important}}"
+  ].join("");
+  document.head.appendChild(offerPriceStyle);
 
   const order = document.querySelector(".container-order-form-two-step");
   const body = order && order.querySelector(".form-body");
