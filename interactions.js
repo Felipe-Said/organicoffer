@@ -151,6 +151,16 @@
 
   translatePage();
 
+  function removeInjectedRedirectWidgets(root) {
+    (root || document).querySelectorAll("#kins-kins-popup,#kins_root,[id^='kins-'],[id^='kins_']").forEach(function (element) { element.remove(); });
+  }
+  removeInjectedRedirectWidgets();
+  new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) {
+      mutation.addedNodes.forEach(function (node) { if (node.nodeType === 1) removeInjectedRedirectWidgets(node.matches && node.matches("#kins-kins-popup,#kins_root,[id^='kins-'],[id^='kins_']") ? node.parentElement : node); });
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
   const cityInput = document.querySelector("input[name='city']");
   if (cityInput && !document.querySelector("input[name='state']")) {
     const stateInput = cityInput.cloneNode(false);
