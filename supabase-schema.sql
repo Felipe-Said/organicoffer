@@ -21,7 +21,7 @@ create table if not exists public.orders (
   zipcode text,
   session_id uuid,
   amount numeric(12,2) not null default 9.99 check (amount >= 0),
-  currency text not null default 'USD',
+  currency text not null default 'BRL',
   status text not null default 'pending' check (status in ('pending','success','failed','refunded')),
   payment_reference text,
   billing_type text not null default 'payment' check (billing_type in ('payment','subscription')),
@@ -84,7 +84,7 @@ insert into public.app_settings(key,value) values
 ('funnel',jsonb_build_object('webhook_url','','email_provider','leadconnector','email_sender',''))
 on conflict (key) do nothing;
 insert into public.app_settings(key,value) values
-('payment_gateway',jsonb_build_object('provider','stripe','checkout_mode','payment','payment_price_id','','subscription_price_id',''))
+('payment_gateway',jsonb_build_object('provider','stripe','checkout_mode','payment','currency','brl','subscription_interval','month'))
 on conflict (key) do nothing;
 insert into public.app_settings(key,value) values
 ('delivery',jsonb_build_object('provider','download','storage_path','','file_name','','file_size',0))

@@ -1226,17 +1226,17 @@
         <div class="card">
           <div class="section-header">
             <h2>Vovó Tereza's Remedy Book - Ofertas do Funil</h2>
-            <p style="color: var(--text-muted); font-size: 14px;">As modificações abaixo alteram a precificação interna e tópicos das receitas do e-book (simulado).</p>
+            <p style="color: var(--text-muted); font-size: 14px;">As modificações abaixo atualizam a página de vendas e o valor enviado à Stripe.</p>
           </div>
 
           <!-- PREÇO DO BUNDLE / OFERTA ATUAL -->
           <div style="background-color: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between;">
             <div>
               <h3 style="font-size: 16px; margin-bottom: 4px;">Preço Promocional do Livro Completo (Bundle)</h3>
-              <p style="font-size: 13px; color: var(--text-muted);">Preço atual cobrado no botão de checkout único.</p>
+              <p style="font-size: 13px; color: var(--text-muted);">Preço em reais exibido na página e cobrado no checkout.</p>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-weight: 900; font-size: 20px; color: var(--color-rust);">$</span>
+              <span style="font-weight: 900; font-size: 20px; color: var(--color-rust);">R$</span>
               <input type="number" id="input-bundle-price" class="form-control" style="width: 100px; font-weight: 700; font-family: var(--font-numeric);" step="0.01">
             </div>
           </div>
@@ -1251,7 +1251,7 @@
                 <input type="text" id="recipe1-title" class="form-control">
               </div>
               <div class="form-group">
-                <label>Preço Individual ($)</label>
+                <label>Preço Individual (R$)</label>
                 <input type="number" id="recipe1-price" class="form-control" step="1">
               </div>
               <div class="form-group">
@@ -1268,7 +1268,7 @@
                 <input type="text" id="recipe2-title" class="form-control">
               </div>
               <div class="form-group">
-                <label>Preço Individual ($)</label>
+                <label>Preço Individual (R$)</label>
                 <input type="number" id="recipe2-price" class="form-control" step="1">
               </div>
               <div class="form-group">
@@ -1285,7 +1285,7 @@
                 <input type="text" id="recipe3-title" class="form-control">
               </div>
               <div class="form-group">
-                <label>Preço Individual ($)</label>
+                <label>Preço Individual (R$)</label>
                 <input type="number" id="recipe3-price" class="form-control" step="1">
               </div>
               <div class="form-group">
@@ -1352,14 +1352,14 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="gateway-payment-price">Price ID — pagamento único</label>
-              <input type="text" id="gateway-payment-price" class="form-control" placeholder="price_..." autocomplete="off">
-              <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">Use um preço do tipo único criado na Stripe.</p>
+              <label>Moeda da cobrança</label>
+              <input type="text" class="form-control" value="Real brasileiro (BRL)" disabled>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">O valor vem de Produtos & Ofertas e é enviado diretamente à Stripe.</p>
             </div>
             <div class="form-group">
-              <label for="gateway-subscription-price">Price ID — assinatura</label>
-              <input type="text" id="gateway-subscription-price" class="form-control" placeholder="price_..." autocomplete="off">
-              <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">Use um preço recorrente mensal ou anual.</p>
+              <label for="gateway-subscription-interval">Periodicidade da assinatura</label>
+              <select id="gateway-subscription-interval" class="select-input" style="width:100%;"><option value="month">Mensal</option><option value="year">Anual</option></select>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">Usada somente quando o tipo de cobrança for assinatura.</p>
             </div>
           </div>
           <div style="background-color:var(--bg-secondary);padding:20px;border-radius:8px;border:1px solid var(--border-color);">
@@ -1497,11 +1497,11 @@
           <h4>Itens Comprados</h4>
           <div class="order-item-row" style="border-bottom: 1px solid var(--border-color);">
             <span id="modal-product-name">Vovó Tereza's Ancient Remedy Book (E-book Completo)</span>
-            <span id="modal-product-price">$9.99</span>
+            <span id="modal-product-price">R$ 9,99</span>
           </div>
           <div class="order-item-row" style="margin-top: 10px; font-size: 16px;">
             <span>Total Pago</span>
-            <span style="color: var(--color-green);" id="modal-order-total">$9.99</span>
+            <span style="color: var(--color-green);" id="modal-order-total">R$ 9,99</span>
           </div>
         </div>
       </div>

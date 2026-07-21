@@ -20,17 +20,18 @@ export default async function handler(request, response) {
       return json(response, 400, { error: "Preencha corretamente os dados pessoais e o endereço." });
     }
 
-    const settingsRows = await supabase("app_settings?select=value&key=eq.payment_gateway&limit=1");
+    const [settingsRows, offerRows] = await Promise.all([
+      supabase("app_settings?select=value&key=eq.payment_gateway&limit=1"),
+      supabase("offers?select=title,price,active&slug=eq.bundle&limit=1")
+    ]);
     const settings = settingsRows?.[0]?.value || {};
+    const offer = offerRows?.[0];
     if (settings.provider !== "stripe") throw new Error("Gateway Stripe não está ativo.");
+    if (!offer || !offer.active) throw new Error("A oferta principal está indisponível.");
     const mode = settings.checkout_mode === "subscription" ? "subscription" : "payment";
-    const priceId = mode === "subscription" ? settings.subscription_price_id : settings.payment_price_id;
-    if (!/^price_[A-Za-z0-9]+$/.test(priceId || "")) throw new Error("Price ID da Stripe não configurado no painel.");
-
-    const price = await stripe("prices/" + encodeURIComponent(priceId));
-    if (!price.active || price.unit_amount === null) throw new Error("O preço selecionado está inativo ou sem valor fixo.");
-    if (mode === "subscription" && !price.recurring) throw new Error("O Price ID de assinatura precisa ser recorrente.");
-    if (mode === "payment" && price.recurring) throw new Error("O Price ID de pagamento único não pode ser recorrente.");
+    const amount = Number(offer.price);
+    const unitAmount = Math.round(amount * 100);
+    if (!Number.isFinite(amount) || unitAmount < 50) throw new Error("Configure um preço válido em Produtos & Ofertas.");
 
     const orderRows = await supabase("orders", {
       method: "POST",
@@ -38,7 +39,7 @@ export default async function handler(request, response) {
       body: [{ customer_name: customer.name, email: customer.email, phone: customer.phone || null,
         address: customer.address || null, city: customer.city || null, country: customer.country || null,
         zipcode: customer.zipcode || null, session_id: customer.session_id || null,
-        amount: price.unit_amount / 100, currency: String(price.currency || "usd").toUpperCase(),
+        amount: amount, currency: "BRL",
         status: "pending", billing_type: mode }]
     });
     const order = orderRows[0];
@@ -57,7 +58,11 @@ export default async function handler(request, response) {
     const origin = protocol + "://" + (request.headers["x-forwarded-host"] || request.headers.host);
     const params = new URLSearchParams();
     appendForm(params, "mode", mode);
-    appendForm(params, "line_items[0][price]", priceId);
+    appendForm(params, "line_items[0][price_data][currency]", "brl");
+    appendForm(params, "line_items[0][price_data][unit_amount]", unitAmount);
+    appendForm(params, "line_items[0][price_data][product_data][name]", offer.title || "Livro de Remédios Antigos");
+    appendForm(params, "line_items[0][price_data][product_data][metadata][product_type]", "digital");
+    if (mode === "subscription") appendForm(params, "line_items[0][price_data][recurring][interval]", settings.subscription_interval === "year" ? "year" : "month");
     appendForm(params, "line_items[0][quantity]", 1);
     appendForm(params, "customer", stripeCustomer.id);
     appendForm(params, "client_reference_id", order.id);

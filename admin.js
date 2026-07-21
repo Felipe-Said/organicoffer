@@ -8,7 +8,7 @@
   let selectedEbookFile = null;
   let ebookObjectUrl = "";
 
-  const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" });
+  const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   const number = new Intl.NumberFormat("pt-BR");
   const dateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
 
@@ -251,22 +251,17 @@
     const value = rows[0] ? rows[0].value : {};
     document.getElementById("gateway-provider").value = value.provider || "stripe";
     document.getElementById("gateway-mode").value = value.checkout_mode || "payment";
-    document.getElementById("gateway-payment-price").value = value.payment_price_id || "";
-    document.getElementById("gateway-subscription-price").value = value.subscription_price_id || "";
+    document.getElementById("gateway-subscription-interval").value = value.subscription_interval || "month";
   }
 
   async function saveGatewaySettings() {
     const button = document.getElementById("save-gateway-button");
     const mode = document.getElementById("gateway-mode").value;
-    const paymentPrice = document.getElementById("gateway-payment-price").value.trim();
-    const subscriptionPrice = document.getElementById("gateway-subscription-price").value.trim();
-    if (mode === "payment" && !/^price_/.test(paymentPrice)) return showToast("Informe um Price ID válido para pagamento único.", "error");
-    if (mode === "subscription" && !/^price_/.test(subscriptionPrice)) return showToast("Informe um Price ID válido para assinatura.", "error");
     const row = { key: "payment_gateway", value: {
       provider: "stripe",
       checkout_mode: mode,
-      payment_price_id: paymentPrice,
-      subscription_price_id: subscriptionPrice
+      currency: "brl",
+      subscription_interval: document.getElementById("gateway-subscription-interval").value
     }, updated_at: new Date().toISOString() };
     button.disabled = true;
     try { await OfferDB.upsert("app_settings", [row], "key", true); showToast("Gateway Stripe salvo no banco."); }

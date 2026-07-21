@@ -151,6 +151,26 @@
 
   translatePage();
 
+  function replaceTextContent(transform) {
+    document.querySelectorAll("body *").forEach(function (element) {
+      if (/^(STYLE|SCRIPT|SVG|PATH|TEMPLATE|OBJECT)$/.test(element.tagName)) return;
+      Array.from(element.childNodes).forEach(function (node) {
+        if (node.nodeType === 3 && node.nodeValue) node.nodeValue = transform(node.nodeValue);
+      });
+    });
+  }
+
+  function convertPageCurrencyToReal() {
+    replaceTextContent(function (text) {
+      return text.replace(/US\$\s*/g, "R$ ").replace(/\$(?=\s*\d)/g, "R$ ");
+    });
+    document.querySelectorAll("[aria-label]").forEach(function (element) {
+      element.setAttribute("aria-label", element.getAttribute("aria-label").replace(/US\$\s*/g, "R$ ").replace(/\$(?=\s*\d)/g, "R$ "));
+    });
+  }
+
+  convertPageCurrencyToReal();
+
   const order = document.querySelector(".container-order-form-two-step");
   const body = order && order.querySelector(".form-body");
   const submit = order && order.querySelector(".form-btn");
@@ -158,6 +178,25 @@
   const fields = order ? Array.from(order.querySelectorAll("input[name], select[name]")) : [];
   const databaseReady = Boolean(window.OfferDB && OfferDB.configured());
   let visitorSession = sessionStorage.getItem("oferta-organica-visitor-session");
+
+  async function loadLiveOfferPrices() {
+    if (!databaseReady) return;
+    try {
+      const offers = await OfferDB.select("offers", "select=slug,price&active=eq.true", false);
+      const bundle = offers.find(function (offer) { return offer.slug === "bundle"; });
+      if (!bundle) return;
+      const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+      const bundlePrice = brl.format(Number(bundle.price));
+      replaceTextContent(function (text) {
+        return text.replace(/R\$\s*9[,.]99/g, bundlePrice);
+      });
+      document.querySelectorAll("[aria-label]").forEach(function (element) {
+        element.setAttribute("aria-label", element.getAttribute("aria-label").replace(/R\$\s*9[,.]99/g, bundlePrice));
+      });
+    } catch (_) { /* O preço estático continua visível se o banco estiver temporariamente indisponível. */ }
+  }
+
+  loadLiveOfferPrices();
   if (!visitorSession && window.crypto && crypto.randomUUID) {
     visitorSession = crypto.randomUUID();
     sessionStorage.setItem("oferta-organica-visitor-session", visitorSession);
