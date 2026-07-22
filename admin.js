@@ -9,7 +9,7 @@
   let ebookObjectUrl = "";
   let selectedPageElement = null;
   let pageEditorStarted = false;
-  let pageEditorPath = "/receitas";
+  let pageEditorPath = "/";
   let clarityStarted = false;
   let clarityLoading = false;
   let clarityFrameReady = false;
@@ -627,7 +627,7 @@
   }
 
   function changePageEditorSource(value) {
-    pageEditorPath = value === "/termos.html" ? value : "/receitas";
+    pageEditorPath = value === "/termos.html" ? value : "/";
     selectedPageElement = null;
     document.getElementById("page-editor-form").hidden = true;
     document.getElementById("page-editor-empty").hidden = false;
@@ -765,7 +765,7 @@
           clarityFrameReady = true;
           setTimeout(function () { renderHeatmap(frame, events); }, 250);
         };
-        frame.src = "/receitas?admin_preview=clarity&refresh=" + Date.now();
+        frame.src = "/?admin_preview=clarity&refresh=" + Date.now();
       } else renderHeatmap(frame, events);
       clarityStarted = true;
     } catch (error) {
