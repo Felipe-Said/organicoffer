@@ -1,6 +1,12 @@
 {
   "cleanUrls": true,
   "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "organicoffer.vercel.app" }],
+      "destination": "https://receitasdavovotereza.site/:path*",
+      "permanent": true
+    },
     { "source": "/blog", "destination": "/", "permanent": true }
   ]
 }
