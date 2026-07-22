@@ -216,7 +216,8 @@
   offerPriceStyle.textContent = [
     ".paragraph-zZDNJDykY54.text-output{font-size:44px!important;white-space:nowrap}",
     ".container-order-form-two-step .form-btn{background-color:#c2521a!important;color:#fff!important;border-color:transparent!important}",
-    ".container-order-form-two-step .form-btn:disabled{opacity:.62;filter:saturate(.72);cursor:not-allowed}",
+    ".container-order-form-two-step .form-btn.form-incomplete{opacity:.82;filter:saturate(.86)}",
+    ".container-order-form-two-step .form-btn:disabled{opacity:.62;filter:saturate(.72);cursor:wait}",
     "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
@@ -459,7 +460,9 @@
       message.className = "restored-form-message";
       message.setAttribute("role", "status");
       message.setAttribute("aria-live", "polite");
-      body.insertBefore(message, body.querySelector(".order-form-footer"));
+      const footer = body.querySelector(".order-form-footer");
+      if (footer && footer.parentElement) footer.parentElement.insertBefore(message, footer);
+      else body.appendChild(message);
     }
     message.textContent = text;
     message.style.cssText = "margin:10px 0 0;text-align:center;font-size:13px;line-height:1.4;color:" + (error ? "#9f2f22" : "#1b6b3a");
@@ -483,9 +486,11 @@
     });
     valid = valid && Boolean(terms && terms.checked);
     if (submit) {
-      submit.disabled = !valid;
-      submit.classList.toggle("disabled", !valid);
-      submit.setAttribute("aria-disabled", String(!valid));
+      submit.disabled = false;
+      submit.classList.remove("disabled");
+      submit.classList.toggle("form-incomplete", !valid);
+      submit.dataset.formValid = String(valid);
+      submit.setAttribute("aria-disabled", "false");
     }
     return valid;
   }
@@ -501,9 +506,13 @@
     submit.type = "button";
     submit.addEventListener("click", async function () {
       if (!validate(true)) {
-        setMessage("Preencha todos os campos e aceite os termos para continuar.", true);
         const invalid = fields.find(function (field) { return !fieldIsValid(field); });
+        setMessage(invalid ? "Preencha o campo destacado para continuar." : "Marque a caixa dos Termos e Condições para continuar.", true);
         if (invalid) invalid.focus();
+        else if (terms && !terms.checked) {
+          terms.focus();
+          terms.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
         return;
       }
       submit.disabled = true;
