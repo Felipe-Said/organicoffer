@@ -247,6 +247,16 @@
     window.dispatchEvent(new CustomEvent("managed-content-status", { detail: { status: status, message: detail || "" } }));
   }
 
+  function applyManagedImage(element, value) {
+    element.src = value;
+    element.removeAttribute("srcset");
+    element.removeAttribute("sizes");
+    element.style.setProperty("background-image", "none", "important");
+    element.style.setProperty("background-color", "transparent", "important");
+    const picture = element.closest("picture");
+    if (picture) picture.querySelectorAll("source").forEach(function (source) { source.srcset = value; });
+  }
+
   installStableEditorKeys();
 
   async function loadManagedPageContent() {
@@ -259,7 +269,7 @@
         let element;
         try { element = document.querySelector(row.selector); } catch (_) { return; }
         if (!element) return;
-        if (row.content_type === "image" && element.tagName === "IMG") element.src = row.value;
+        if (row.content_type === "image" && element.tagName === "IMG") applyManagedImage(element, row.value);
         if (row.content_type === "text") element.textContent = row.value;
         applied += 1;
       });

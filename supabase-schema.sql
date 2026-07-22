@@ -132,7 +132,7 @@ values ('ebooks','ebooks',false,29360128,array['application/pdf'])
 on conflict (id) do update set public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-values ('page-assets','page-assets',true,8388608,array['image/png','image/jpeg','image/webp','image/gif','image/avif'])
+values ('page-assets','page-assets',true,8388608,array['image/png','image/jpeg','image/webp','image/gif','image/avif','image/svg+xml'])
 on conflict (id) do update set public=true,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)

@@ -36,7 +36,7 @@ values (
   'page-assets',
   true,
   8388608,
-  array['image/png','image/jpeg','image/webp','image/gif','image/avif']
+  array['image/png','image/jpeg','image/webp','image/gif','image/avif','image/svg+xml']
 )
 on conflict (id) do update set
   public = true,

@@ -8,6 +8,7 @@
   let selectedEbookFile = null;
   let ebookObjectUrl = "";
   let selectedPageElement = null;
+  let pageEditorImageObjectUrl = "";
   let pageEditorStarted = false;
   let pageEditorPath = "/receitas";
   let clarityStarted = false;
@@ -560,6 +561,36 @@
     status.className = "field-status" + (type ? " " + type : "");
   }
 
+  function normalizedPageImage(file) {
+    if (!file) throw new Error("Selecione a nova imagem.");
+    if (file.size > 8 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 8 MB.");
+    const extension = (file.name.split(".").pop() || "").toLowerCase();
+    const mimeByExtension = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", avif: "image/avif", svg: "image/svg+xml" };
+    const mime = mimeByExtension[extension];
+    if (!mime) throw new Error("Formato não aceito. Use PNG, JPG, JPEG, WebP, GIF, AVIF ou SVG.");
+    if (file.type && file.type !== mime) throw new Error("O conteúdo do arquivo não corresponde ao formato " + extension.toUpperCase() + ".");
+    return file.type === mime ? file : new File([file], file.name, { type: mime });
+  }
+
+  function previewPageImageFile() {
+    try {
+      const file = normalizedPageImage(document.getElementById("page-editor-image").files[0]);
+      if (pageEditorImageObjectUrl) URL.revokeObjectURL(pageEditorImageObjectUrl);
+      pageEditorImageObjectUrl = URL.createObjectURL(file);
+      document.getElementById("page-editor-image-preview").src = pageEditorImageObjectUrl;
+      setPageEditorStatus("Prévia carregada. Clique em Publicar para salvar.", "success");
+    } catch (error) { setPageEditorStatus(error.message, "error"); }
+  }
+
+  function verifyPublishedImage(url) {
+    return new Promise(function (resolve, reject) {
+      const image = new Image();
+      image.onload = resolve;
+      image.onerror = function () { reject(new Error("O upload terminou, mas a imagem pública não pôde ser carregada.")); };
+      image.src = url;
+    });
+  }
+
   function selectPageElement(element, frameDocument) {
     if (!element || /^(HTML|BODY|SCRIPT|STYLE|SVG|PATH|IFRAME|FORM|INPUT|SELECT|TEXTAREA|BUTTON)$/.test(element.tagName)) return;
     const isImage = element.tagName === "IMG";
@@ -642,15 +673,14 @@
     try {
       let value;
       if (selectedPageElement.type === "image") {
-        const file = document.getElementById("page-editor-image").files[0];
-        if (!file) throw new Error("Selecione a nova imagem.");
-        if (file.size > 8 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 8 MB.");
+        const file = normalizedPageImage(document.getElementById("page-editor-image").files[0]);
         const extension = (file.name.split(".").pop() || "webp").toLowerCase().replace(/[^a-z0-9]/g, "");
         let hash = 0;
         for (let index = 0; index < selectedPageElement.storageSelector.length; index += 1) hash = ((hash << 5) - hash + selectedPageElement.storageSelector.charCodeAt(index)) | 0;
         const path = "page/asset-" + Math.abs(hash) + "-" + Date.now() + "." + extension;
         await OfferDB.storage.upload("page-assets", path, file);
         value = window.SUPABASE_CONFIG.url + "/storage/v1/object/public/page-assets/" + path;
+        await verifyPublishedImage(value);
       } else {
         value = document.getElementById("page-editor-value").value.trim();
         if (!value) throw new Error("O texto não pode ficar vazio.");
@@ -821,6 +851,7 @@
       document.getElementById("customer-state-filter").addEventListener("change", function () { populateCustomerRegionFilters(); renderCustomersTable(); });
       document.getElementById("customer-city-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
+      document.getElementById("page-editor-image").addEventListener("change", previewPageImageFile);
       startLiveVisitors();
       await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings(), loadDeliverySettings()]);
     } catch (error) { showToast(error.message, "error"); }
