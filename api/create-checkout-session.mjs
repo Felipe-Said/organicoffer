@@ -66,8 +66,9 @@ export default async function handler(request, response) {
     appendForm(params, "line_items[0][quantity]", 1);
     appendForm(params, "customer", stripeCustomer.id);
     appendForm(params, "client_reference_id", order.id);
-    appendForm(params, "success_url", origin + "/receitas?payment=success&session_id={CHECKOUT_SESSION_ID}");
-    appendForm(params, "cancel_url", origin + "/receitas?payment=cancelled");
+    appendForm(params, "ui_mode", "embedded");
+    appendForm(params, "return_url", origin + "/receitas?payment=success&session_id={CHECKOUT_SESSION_ID}");
+    appendForm(params, "redirect_on_completion", "if_required");
     appendForm(params, "metadata[order_id]", order.id);
     appendForm(params, "metadata[order_number]", order.order_number);
     appendForm(params, "metadata[product_type]", "digital");
@@ -77,7 +78,8 @@ export default async function handler(request, response) {
     await supabase("orders?id=eq." + encodeURIComponent(order.id), {
       method: "PATCH", body: { payment_reference: checkout.id, stripe_customer_id: stripeCustomer.id, updated_at: new Date().toISOString() }
     });
-    return json(response, 200, { url: checkout.url });
+    if (!checkout.client_secret) throw new Error("A Stripe não retornou o acesso ao checkout incorporado.");
+    return json(response, 200, { client_secret: checkout.client_secret, session_id: checkout.id });
   } catch (error) {
     return json(response, 500, { error: error.message || "Não foi possível iniciar o checkout." });
   }

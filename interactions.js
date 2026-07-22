@@ -333,14 +333,19 @@
       ".paid-delivery-note{margin:11px 0 0;color:#8a8a8a;font:400 12px Arial,sans-serif}" +
       ".paid-delivery-loading{height:310px;margin:10px auto 20px;border-radius:8px;background:linear-gradient(100deg,#f1f1f1 20%,#fafafa 36%,#f1f1f1 52%);background-size:220% 100%;animation:deliveryShimmer 1.3s infinite}" +
       ".paid-delivery-error{padding:18px;border:1px solid #e2b8ae;border-radius:8px;background:#fff5f2;color:#8e3024;font:600 14px/1.5 Arial,sans-serif}" +
+      ".embedded-payment{padding:18px 12px 12px;animation:paidReveal .35s cubic-bezier(.16,1,.3,1)}" +
+      ".embedded-payment-header{margin:0 0 14px;text-align:center}" +
+      ".embedded-payment-header strong{display:block;color:#202020;font:800 20px/1.25 Arial,sans-serif}" +
+      ".embedded-payment-header span{display:block;margin-top:5px;color:#6d6d6d;font:400 13px/1.5 Arial,sans-serif}" +
+      ".embedded-payment-frame{min-height:480px;border-radius:8px;background:#fff}" +
       "@keyframes deliveryShimmer{to{background-position-x:-220%}}@keyframes paidReveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}";
     document.head.appendChild(style);
   }
 
-  async function showPaidDelivery() {
+  async function showPaidDelivery(sessionIdOverride) {
     const query = new URLSearchParams(location.search);
-    const sessionId = query.get("session_id");
-    if (query.get("payment") !== "success" || !sessionId || !body) return;
+    const sessionId = sessionIdOverride || query.get("session_id");
+    if ((!sessionIdOverride && query.get("payment") !== "success") || !sessionId || !body) return;
     installDeliveryStyles();
     body.replaceChildren();
     const panel = deliveryElement("section", "paid-delivery");
@@ -351,9 +356,16 @@
     panel.appendChild(deliveryElement("div", "paid-delivery-loading"));
     body.appendChild(panel);
     try {
-      const response = await fetch("/api/payment-delivery?session_id=" + encodeURIComponent(sessionId), { headers: { Accept: "application/json" } });
-      const payload = await response.json();
-      if (!response.ok || !payload.preview_url) throw new Error(payload.error || "Não foi possível liberar o e-book.");
+      let response;
+      let payload;
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        response = await fetch("/api/payment-delivery?session_id=" + encodeURIComponent(sessionId), { headers: { Accept: "application/json" }, cache: "no-store" });
+        payload = await response.json();
+        if (response.ok && payload.preview_url) break;
+        const stillProcessing = response.status === 403 && /ainda não foi confirmado/i.test(payload.error || "");
+        if (!stillProcessing || attempt === 7) throw new Error(payload.error || "Não foi possível liberar o e-book.");
+        await new Promise(function (resolve) { setTimeout(resolve, 1500); });
+      }
       panel.replaceChildren();
       panel.appendChild(deliveryElement("span", "paid-delivery-badge", "Pagamento confirmado"));
       panel.appendChild(deliveryElement("h3", "", "Seu e-book está pronto"));
@@ -373,6 +385,48 @@
   }
 
   showPaidDelivery();
+
+  let stripeScriptPromise;
+  function loadStripeEmbedded() {
+    if (window.Stripe) return Promise.resolve(window.Stripe);
+    if (stripeScriptPromise) return stripeScriptPromise;
+    stripeScriptPromise = new Promise(function (resolve, reject) {
+      const script = document.createElement("script");
+      script.src = "https://js.stripe.com/v3/";
+      script.async = true;
+      script.onload = function () { window.Stripe ? resolve(window.Stripe) : reject(new Error("A Stripe não pôde ser inicializada.")); };
+      script.onerror = function () { reject(new Error("Não foi possível carregar o pagamento seguro da Stripe.")); };
+      document.head.appendChild(script);
+    });
+    return stripeScriptPromise;
+  }
+
+  async function showEmbeddedCheckout(payload) {
+    const publishableKey = window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.stripePublishableKey;
+    if (!publishableKey || !/^pk_(test|live)_/.test(publishableKey)) throw new Error("STRIPE_PUBLISHABLE_KEY não configurada na Vercel.");
+    const StripeFactory = await loadStripeEmbedded();
+    const stripeClient = StripeFactory(publishableKey);
+    let embeddedCheckout;
+    embeddedCheckout = await stripeClient.initEmbeddedCheckout({
+      clientSecret: payload.client_secret,
+      onComplete: async function () {
+        if (embeddedCheckout) embeddedCheckout.destroy();
+        await showPaidDelivery(payload.session_id);
+      }
+    });
+    installDeliveryStyles();
+    body.replaceChildren();
+    const panel = deliveryElement("section", "embedded-payment");
+    const header = deliveryElement("div", "embedded-payment-header");
+    header.appendChild(deliveryElement("strong", "", "Pagamento seguro"));
+    header.appendChild(deliveryElement("span", "", "Conclua o pagamento abaixo. Seu e-book será liberado neste mesmo espaço."));
+    const mount = deliveryElement("div", "embedded-payment-frame");
+    mount.id = "stripe-embedded-checkout";
+    panel.appendChild(header);
+    panel.appendChild(mount);
+    body.appendChild(panel);
+    embeddedCheckout.mount("#stripe-embedded-checkout");
+  }
 
   function recordEvent(type, eventData) {
     if (!visitorSession || adminPreview) return Promise.resolve();
@@ -526,8 +580,8 @@
           body: JSON.stringify(Object.assign({}, values, { session_id: visitorSession }))
         });
         const payload = await response.json();
-        if (!response.ok || !payload.url) throw new Error(payload.error || "Não foi possível abrir o checkout.");
-        location.assign(payload.url);
+        if (!response.ok || !payload.client_secret || !payload.session_id) throw new Error(payload.error || "Não foi possível abrir o checkout.");
+        await showEmbeddedCheckout(payload);
       } catch (error) {
         setMessage(error.message || "Não foi possível iniciar o pagamento. Tente novamente.", true);
         submit.disabled = false;
