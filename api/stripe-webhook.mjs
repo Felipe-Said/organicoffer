@@ -34,14 +34,19 @@ export default async function handler(request, response) {
       const session = event.data.object;
       const orderId = session.metadata?.order_id || session.client_reference_id;
       const paid = event.type === "checkout.session.async_payment_succeeded" || session.payment_status === "paid" || session.payment_status === "no_payment_required";
-      if (orderId && paid) await supabase("orders?id=eq." + encodeURIComponent(orderId), {
-        method: "PATCH",
-        body: { status: "success", payment_reference: session.id,
-          stripe_customer_id: session.customer || null,
-          stripe_subscription_id: session.subscription || null,
-          subscription_status: session.subscription ? "active" : null,
-          updated_at: new Date().toISOString() }
-      });
+      if (orderId && paid) {
+        await supabase("orders?id=eq." + encodeURIComponent(orderId), {
+          method: "PATCH",
+          body: { status: "success", payment_reference: session.id,
+            stripe_customer_id: session.customer || null,
+            stripe_subscription_id: session.subscription || null,
+            subscription_status: session.subscription ? "active" : null,
+            updated_at: new Date().toISOString() }
+        });
+        await supabase("checkout_leads?order_id=eq." + encodeURIComponent(orderId), {
+          method: "PATCH", body: { status: "converted", last_seen_at: new Date().toISOString() }
+        });
+      }
     }
     if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const subscription = event.data.object;

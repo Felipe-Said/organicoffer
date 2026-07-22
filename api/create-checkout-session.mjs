@@ -20,12 +20,14 @@ export default async function handler(request, response) {
       return json(response, 400, { error: "Preencha corretamente os dados pessoais e o endereço." });
     }
 
-    const [settingsRows, offerRows] = await Promise.all([
+    const [settingsRows, offerRows, leadRows] = await Promise.all([
       supabase("app_settings?select=value&key=eq.payment_gateway&limit=1"),
-      supabase("offers?select=title,price,active&slug=eq.bundle&limit=1")
+      supabase("offers?select=title,price,active&slug=eq.bundle&limit=1"),
+      customer.session_id ? supabase("checkout_leads?select=source_type,source_platform,attribution&session_id=eq." + encodeURIComponent(customer.session_id) + "&limit=1") : Promise.resolve([])
     ]);
     const settings = settingsRows?.[0]?.value || {};
     const offer = offerRows?.[0];
+    const lead = leadRows?.[0] || {};
     if (settings.provider !== "stripe") throw new Error("Gateway Stripe não está ativo.");
     if (!offer || !offer.active) throw new Error("A oferta principal está indisponível.");
     const mode = settings.checkout_mode === "subscription" ? "subscription" : "payment";
@@ -40,7 +42,8 @@ export default async function handler(request, response) {
         address: customer.address || null, city: customer.city || null, state: customer.state || null, country: customer.country || null,
         zipcode: customer.zipcode || null, session_id: customer.session_id || null,
         amount: amount, currency: "BRL",
-        status: "pending", billing_type: mode }]
+        status: "pending", billing_type: mode,
+        source_type: lead.source_type || "direct", source_platform: lead.source_platform || "direct", attribution: lead.attribution || {} }]
     });
     const order = orderRows[0];
     const customerParams = new URLSearchParams();
@@ -77,6 +80,9 @@ export default async function handler(request, response) {
     const checkout = await stripe("checkout/sessions", { method: "POST", body: params });
     await supabase("orders?id=eq." + encodeURIComponent(order.id), {
       method: "PATCH", body: { payment_reference: checkout.id, stripe_customer_id: stripeCustomer.id, updated_at: new Date().toISOString() }
+    });
+    if (customer.session_id) await supabase("checkout_leads?session_id=eq." + encodeURIComponent(customer.session_id), {
+      method: "PATCH", body: { status: "checkout", order_id: order.id, last_seen_at: new Date().toISOString() }
     });
     if (!checkout.client_secret) throw new Error("A Stripe não retornou o acesso ao checkout incorporado.");
     return json(response, 200, { client_secret: checkout.client_secret, session_id: checkout.id });

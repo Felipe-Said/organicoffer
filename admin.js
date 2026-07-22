@@ -2,6 +2,7 @@
   "use strict";
 
   let orders = [];
+  let checkoutLeads = [];
   let customers = [];
   let currentSelectedOrderId = null;
   let deliverySettings = {};
@@ -58,7 +59,9 @@
       billingType: row.billing_type || "payment",
       stripeCustomerId: row.stripe_customer_id || "",
       stripeSubscriptionId: row.stripe_subscription_id || "",
-      subscriptionStatus: row.subscription_status || ""
+      subscriptionStatus: row.subscription_status || "",
+      sourceType: row.source_type || "direct",
+      sourcePlatform: row.source_platform || "direct"
     };
   }
 
@@ -128,24 +131,69 @@
 
   function buildCustomers() {
     const map = new Map();
+    function customerKey(email, phone, sessionId) {
+      const normalizedEmail = String(email || "").trim().toLowerCase();
+      const normalizedPhone = String(phone || "").replace(/\D/g, "");
+      return normalizedEmail ? "email:" + normalizedEmail : (normalizedPhone ? "phone:" + normalizedPhone : "session:" + sessionId);
+    }
+    checkoutLeads.forEach(function (lead) {
+      const key = customerKey(lead.email, lead.phone, lead.session_id);
+      map.set(key, {
+        name: lead.customer_name || "Nome não informado", email: lead.email || "E-mail não informado", phone: lead.phone || "—",
+        address: [lead.address, lead.city, lead.state, lead.country, lead.zipcode].filter(Boolean).join(", ") || "—",
+        city: lead.city || "", state: lead.state || "", country: lead.country || "", zipcode: lead.zipcode || "",
+        purchases: 0, totalSpent: 0, sent: false, lastPurchase: "Nenhuma compra confirmada", subscriptions: [],
+        lifecycle: lead.status === "checkout" ? "checkout" : (lead.status === "converted" ? "paid" : "lead"),
+        sourceType: lead.source_type || "direct", sourcePlatform: lead.source_platform || "direct",
+        lastActivityAt: lead.last_seen_at || lead.first_seen_at
+      });
+    });
     orders.forEach(function (order) {
-      const key = order.email.toLowerCase();
+      const key = customerKey(order.email, order.phone, order.id);
       const current = map.get(key) || {
         name: order.name, email: order.email, phone: order.phone, address: order.address,
         city: order.city, state: order.state, country: order.country, zipcode: order.zipcode,
-        purchases: 0, totalSpent: 0, sent: false, lastPurchase: order.date, subscriptions: []
+        purchases: 0, totalSpent: 0, sent: false, lastPurchase: order.date, subscriptions: [], lifecycle: "checkout",
+        sourceType: order.sourceType, sourcePlatform: order.sourcePlatform, lastActivityAt: order.createdAt
       };
+      current.name = order.name || current.name; current.email = order.email || current.email; current.phone = order.phone || current.phone;
+      current.address = order.address || current.address; current.city = order.city || current.city; current.state = order.state || current.state;
+      current.country = order.country || current.country; current.zipcode = order.zipcode || current.zipcode;
       if (order.status === "success") {
-        current.purchases += 1; current.totalSpent += order.amount; current.sent = true;
+        current.purchases += 1; current.totalSpent += order.amount; current.sent = true; current.lifecycle = "paid"; current.lastPurchase = order.date;
+      } else if (current.lifecycle !== "paid") {
+        current.lifecycle = "checkout";
       }
       if (order.stripeSubscriptionId && !current.subscriptions.some(function (item) { return item.id === order.stripeSubscriptionId; })) {
         current.subscriptions.push({ id: order.stripeSubscriptionId, orderId: order.id, status: order.subscriptionStatus || "active" });
       }
       map.set(key, current);
     });
-    customers = Array.from(map.values()).sort(function (a, b) { return a.name.localeCompare(b.name, "pt-BR"); });
+    customers = Array.from(map.values()).sort(function (a, b) { return new Date(b.lastActivityAt || 0) - new Date(a.lastActivityAt || 0); });
     populateCustomerRegionFilters();
+    populateCustomerSourceFilter();
     renderCityRanking();
+  }
+
+  function sourceLabel(customer) {
+    if (customer.sourceType === "social") return "Rede social: " + customer.sourcePlatform;
+    if (customer.sourceType === "blog") return "Blog";
+    if (customer.sourceType === "search") return "Busca: " + customer.sourcePlatform;
+    if (customer.sourceType === "referral") return "Referência: " + customer.sourcePlatform;
+    if (customer.sourceType === "campaign") return "Campanha: " + customer.sourcePlatform;
+    return "Acesso direto";
+  }
+
+  function populateCustomerSourceFilter() {
+    const select = document.getElementById("customer-source-filter"); if (!select) return;
+    const selected = select.value;
+    const sources = Array.from(new Set(customers.map(function (item) { return item.sourceType + "|" + item.sourcePlatform; }))).sort();
+    select.innerHTML = '<option value="all">Todas as origens</option>';
+    sources.forEach(function (value) {
+      const parts = value.split("|"); const option = document.createElement("option"); option.value = value;
+      option.textContent = sourceLabel({ sourceType: parts[0], sourcePlatform: parts.slice(1).join("|") }); select.appendChild(option);
+    });
+    select.value = sources.includes(selected) ? selected : "all";
   }
 
   function replaceSelectOptions(select, values, allLabel, selected) {
@@ -187,9 +235,13 @@
     const query = document.getElementById("customer-search").value.trim().toLowerCase();
     const state = document.getElementById("customer-state-filter").value;
     const city = document.getElementById("customer-city-filter").value;
+    const lifecycle = document.getElementById("customer-lifecycle-filter").value;
+    const source = document.getElementById("customer-source-filter").value;
     const filtered = customers.filter(function (customer) {
       const matchesQuery = !query || customer.email.toLowerCase().includes(query) || customer.name.toLowerCase().includes(query) || customer.phone.toLowerCase().includes(query);
-      return matchesQuery && (state === "all" || customer.state === state) && (city === "all" || customer.city === city);
+      const customerSource = customer.sourceType + "|" + customer.sourcePlatform;
+      return matchesQuery && (state === "all" || customer.state === state) && (city === "all" || customer.city === city) &&
+        (lifecycle === "all" || customer.lifecycle === lifecycle) && (source === "all" || customerSource === source);
     });
     container.innerHTML = "";
     if (!filtered.length) { const empty = document.createElement("div"); empty.className = "customer-empty"; empty.textContent = "Nenhum cliente corresponde aos filtros."; container.appendChild(empty); return; }
@@ -197,7 +249,9 @@
       const card = document.createElement("article"); card.className = "customer-card";
       const head = document.createElement("div"); head.className = "customer-card-head";
       const identity = document.createElement("div"); const title = document.createElement("h3"); title.textContent = customer.name; const email = document.createElement("p"); email.textContent = customer.email; identity.append(title, email);
-      const purchaseBadge = document.createElement("span"); purchaseBadge.className = "status-badge success"; purchaseBadge.textContent = customer.purchases + (customer.purchases === 1 ? " compra" : " compras"); head.append(identity, purchaseBadge);
+      const lifecycleMeta = customer.lifecycle === "paid" ? { text: customer.purchases + (customer.purchases === 1 ? " compra" : " compras"), css: "success" } :
+        (customer.lifecycle === "checkout" ? { text: "Checkout iniciado", css: "pending" } : { text: "Lead sem pagamento", css: "failed" });
+      const purchaseBadge = document.createElement("span"); purchaseBadge.className = "status-badge " + lifecycleMeta.css; purchaseBadge.textContent = lifecycleMeta.text; head.append(identity, purchaseBadge);
       const details = document.createElement("div"); details.className = "customer-details";
       addCustomerDetail(details, "Telefone", customer.phone);
       addCustomerDetail(details, "Endereço", customer.address);
@@ -205,6 +259,8 @@
       addCustomerDetail(details, "CEP / País", [customer.zipcode, customer.country].filter(Boolean).join(" / "));
       addCustomerDetail(details, "Total confirmado", money.format(customer.totalSpent));
       addCustomerDetail(details, "Última compra", customer.lastPurchase);
+      addCustomerDetail(details, "Origem", sourceLabel(customer));
+      addCustomerDetail(details, "Última atividade", customer.lastActivityAt ? dateTime.format(new Date(customer.lastActivityAt)) : "Não informado");
       card.append(head, details);
       customer.subscriptions.forEach(function (subscription) {
         const section = document.createElement("div"); section.className = "customer-subscription";
@@ -274,8 +330,11 @@
   function queueResendFromModal() { if (currentSelectedOrderId) queueEmailDelivery(currentSelectedOrderId); }
 
   async function loadOrders() {
-    const rows = await OfferDB.select("orders", "select=*&order=created_at.desc&limit=1000", true);
-    orders = rows.map(normalizeOrder); buildCustomers(); renderRecentOrders(); renderOrdersTable(); renderCustomersTable();
+    const results = await Promise.all([
+      OfferDB.select("orders", "select=*&order=created_at.desc&limit=1000", true),
+      OfferDB.select("checkout_leads", "select=*&order=last_seen_at.desc&limit=1000", true)
+    ]);
+    orders = results[0].map(normalizeOrder); checkoutLeads = results[1]; buildCustomers(); renderRecentOrders(); renderOrdersTable(); renderCustomersTable();
   }
 
   function updateChart(points) {
@@ -869,6 +928,8 @@
       document.getElementById("customer-search").addEventListener("input", renderCustomersTable);
       document.getElementById("customer-state-filter").addEventListener("change", function () { populateCustomerRegionFilters(); renderCustomersTable(); });
       document.getElementById("customer-city-filter").addEventListener("change", renderCustomersTable);
+      document.getElementById("customer-lifecycle-filter").addEventListener("change", renderCustomersTable);
+      document.getElementById("customer-source-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
       document.getElementById("page-editor-image").addEventListener("change", previewPageImageFile);
       document.getElementById("page-editor-color").addEventListener("input", previewPageElementColor);

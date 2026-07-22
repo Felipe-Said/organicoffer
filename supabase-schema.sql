@@ -29,6 +29,9 @@ create table if not exists public.orders (
   stripe_customer_id text,
   stripe_subscription_id text,
   subscription_status text,
+  source_type text not null default 'direct',
+  source_platform text not null default 'direct',
+  attribution jsonb not null default '{}'::jsonb,
   ebook_sent_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -36,6 +39,32 @@ create table if not exists public.orders (
 create index if not exists orders_created_at_idx on public.orders(created_at desc);
 create index if not exists orders_email_idx on public.orders(lower(email));
 create index if not exists orders_status_idx on public.orders(status);
+alter table public.orders add column if not exists source_type text not null default 'direct';
+alter table public.orders add column if not exists source_platform text not null default 'direct';
+alter table public.orders add column if not exists attribution jsonb not null default '{}'::jsonb;
+
+create table if not exists public.checkout_leads (
+  session_id uuid primary key,
+  customer_name text not null default '',
+  email text not null default '',
+  phone text not null default '',
+  address text not null default '',
+  city text not null default '',
+  state text not null default '',
+  country text not null default '',
+  zipcode text not null default '',
+  status text not null default 'lead' check (status in ('lead','checkout','converted')),
+  order_id uuid references public.orders(id) on delete set null,
+  source_type text not null default 'direct',
+  source_platform text not null default 'direct',
+  attribution jsonb not null default '{}'::jsonb,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+create index if not exists checkout_leads_last_seen_idx on public.checkout_leads(last_seen_at desc);
+create index if not exists checkout_leads_email_idx on public.checkout_leads(lower(email));
+create index if not exists checkout_leads_status_idx on public.checkout_leads(status);
+create index if not exists checkout_leads_source_idx on public.checkout_leads(source_type,source_platform);
 
 create table if not exists public.offers (
   slug text primary key,
@@ -170,6 +199,7 @@ create policy "admins delete blog assets" on storage.objects for delete to authe
 
 alter table public.admin_profiles enable row level security;
 alter table public.orders enable row level security;
+alter table public.checkout_leads enable row level security;
 alter table public.offers enable row level security;
 alter table public.app_settings enable row level security;
 alter table public.site_events enable row level security;
@@ -183,6 +213,8 @@ drop policy if exists "admin profiles self read" on public.admin_profiles;
 create policy "admin profiles self read" on public.admin_profiles for select to authenticated using (user_id = (select auth.uid()));
 drop policy if exists "admins manage orders" on public.orders;
 create policy "admins manage orders" on public.orders for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+drop policy if exists "admins read checkout leads" on public.checkout_leads;
+create policy "admins read checkout leads" on public.checkout_leads for select to authenticated using ((select public.is_admin()));
 drop policy if exists "public creates pending orders" on public.orders;
 create policy "public creates pending orders" on public.orders for insert to anon with check (status = 'pending');
 drop policy if exists "public reads active offers" on public.offers;
@@ -218,6 +250,7 @@ grant usage on schema public to anon,authenticated;
 grant insert on public.orders,public.site_events to anon;
 grant select on public.offers,public.page_content,public.blog_categories,public.blog_posts,public.blog_settings to anon;
 grant select,insert,update,delete on public.admin_profiles,public.orders,public.offers,public.app_settings,public.site_events,public.page_content,public.blog_categories,public.blog_posts,public.blog_settings,public.email_delivery_jobs to authenticated;
+grant select on public.checkout_leads to authenticated;
 grant usage,select on sequence public.site_events_id_seq to anon,authenticated;
 
 create or replace function public.admin_dashboard_metrics()

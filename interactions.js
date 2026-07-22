@@ -229,6 +229,7 @@
   const databaseReady = Boolean(window.OfferDB && OfferDB.configured());
   const adminPreview = new URLSearchParams(location.search).has("admin_preview");
   let visitorSession = sessionStorage.getItem("oferta-organica-visitor-session");
+  const attributionCookieName = "vt_attribution";
   const editorElementQuery = "img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small";
 
   function installStableEditorKeys() {
@@ -311,6 +312,62 @@
     visitorSession = crypto.randomUUID();
     sessionStorage.setItem("oferta-organica-visitor-session", visitorSession);
   }
+
+  function socialPlatform(hostname) {
+    const host = String(hostname || "").toLowerCase();
+    const directNames = { instagram: "instagram", facebook: "facebook", fb: "facebook", tiktok: "tiktok", youtube: "youtube", twitter: "x-twitter", x: "x-twitter", pinterest: "pinterest", linkedin: "linkedin", whatsapp: "whatsapp" };
+    if (directNames[host]) return directNames[host];
+    const platforms = [
+      ["instagram.com", "instagram"], ["facebook.com", "facebook"], ["fb.com", "facebook"],
+      ["tiktok.com", "tiktok"], ["youtube.com", "youtube"], ["youtu.be", "youtube"],
+      ["twitter.com", "x-twitter"], ["x.com", "x-twitter"], ["pinterest.", "pinterest"],
+      ["linkedin.com", "linkedin"], ["whatsapp.com", "whatsapp"], ["wa.me", "whatsapp"]
+    ];
+    const match = platforms.find(function (item) { return host.includes(item[0]); });
+    return match ? match[1] : "";
+  }
+
+  function readAttributionCookie() {
+    const prefix = attributionCookieName + "=";
+    const item = document.cookie.split(";").map(function (part) { return part.trim(); }).find(function (part) { return part.startsWith(prefix); });
+    if (!item) return null;
+    try { return JSON.parse(decodeURIComponent(item.slice(prefix.length))); } catch (error) { return null; }
+  }
+
+  function captureAttribution() {
+    const saved = readAttributionCookie();
+    if (saved && saved.source_type) return saved;
+    const params = new URLSearchParams(location.search);
+    let referrerUrl = null;
+    try { referrerUrl = document.referrer ? new URL(document.referrer) : null; } catch (error) {}
+    const utmSource = (params.get("utm_source") || "").slice(0, 180).toLowerCase();
+    const clickPlatform = params.has("fbclid") ? "facebook" : (params.has("ttclid") ? "tiktok" : "");
+    const social = clickPlatform || socialPlatform(utmSource) || socialPlatform(referrerUrl && referrerUrl.hostname);
+    const sameSite = referrerUrl && referrerUrl.hostname === location.hostname;
+    let sourceType = location.pathname.startsWith("/receitas") ? "direct" : "blog";
+    let sourcePlatform = sourceType === "blog" ? "blog" : "direct";
+    if (social) { sourceType = "social"; sourcePlatform = social; }
+    else if (params.has("gclid")) { sourceType = "search"; sourcePlatform = "google"; }
+    else if (utmSource) { sourceType = "campaign"; sourcePlatform = utmSource; }
+    else if (sameSite && !referrerUrl.pathname.startsWith("/receitas")) { sourceType = "blog"; sourcePlatform = "blog"; }
+    else if (referrerUrl && !sameSite) {
+      const host = referrerUrl.hostname.replace(/^www\./, "");
+      sourceType = /google\.|bing\.|yahoo\.|duckduckgo\./.test(host) ? "search" : "referral";
+      sourcePlatform = host;
+    }
+    const attribution = {
+      source_type: sourceType, source_platform: sourcePlatform,
+      referrer: document.referrer || "", landing_path: location.pathname + location.search,
+      utm_source: utmSource, utm_medium: params.get("utm_medium") || "",
+      utm_campaign: params.get("utm_campaign") || "", utm_content: params.get("utm_content") || "",
+      utm_term: params.get("utm_term") || ""
+    };
+    const secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = attributionCookieName + "=" + encodeURIComponent(JSON.stringify(attribution)) + "; Max-Age=7776000; Path=/; SameSite=Lax" + secure;
+    return attribution;
+  }
+
+  const visitorAttribution = captureAttribution();
 
   function deliveryElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -549,10 +606,27 @@
     return valid;
   }
 
+  let leadSaveTimer = null;
+  function saveCheckoutLead(immediate) {
+    if (!visitorSession || adminPreview || !fields.length) return;
+    clearTimeout(leadSaveTimer);
+    const send = function () {
+      const values = {};
+      fields.forEach(function (field) { values[field.name] = field.value.trim(); });
+      fetch("/api/checkout-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.assign({}, values, { session_id: visitorSession, attribution: visitorAttribution })),
+        keepalive: true
+      }).catch(function () {});
+    };
+    if (immediate) send(); else leadSaveTimer = setTimeout(send, 800);
+  }
+
   fields.forEach(function (field) {
-    field.addEventListener("blur", function () { field.dataset.touched = "true"; validate(false); });
-    field.addEventListener("input", function () { validate(false); });
-    field.addEventListener("change", function () { validate(false); });
+    field.addEventListener("blur", function () { field.dataset.touched = "true"; validate(false); saveCheckoutLead(true); });
+    field.addEventListener("input", function () { validate(false); saveCheckoutLead(false); });
+    field.addEventListener("change", function () { validate(false); saveCheckoutLead(true); });
   });
   if (terms) terms.addEventListener("change", function () { validate(false); });
 
@@ -573,6 +647,7 @@
       setMessage("Abrindo o pagamento seguro da Stripe...", false);
       const values = {};
       fields.forEach(function (field) { values[field.name] = field.value.trim(); });
+      saveCheckoutLead(true);
       try {
         const response = await fetch("/api/create-checkout-session", {
           method: "POST",
