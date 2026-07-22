@@ -66,7 +66,7 @@ export default async function handler(request, response) {
     appendForm(params, "line_items[0][quantity]", 1);
     appendForm(params, "customer", stripeCustomer.id);
     appendForm(params, "client_reference_id", order.id);
-    appendForm(params, "ui_mode", "embedded");
+    appendForm(params, "ui_mode", "embedded_page");
     appendForm(params, "return_url", origin + "/receitas?payment=success&session_id={CHECKOUT_SESSION_ID}");
     appendForm(params, "redirect_on_completion", "if_required");
     appendForm(params, "metadata[order_id]", order.id);
