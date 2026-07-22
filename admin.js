@@ -591,21 +591,37 @@
     });
   }
 
+  function pageColorHex(color) {
+    const match = String(color || "").match(/\d+/g);
+    if (!match || match.length < 3) return "#c2521a";
+    return "#" + match.slice(0, 3).map(function (part) { return Number(part).toString(16).padStart(2, "0"); }).join("");
+  }
+
+  function previewPageElementColor() {
+    if (!selectedPageElement || selectedPageElement.type !== "style" || !selectedPageElement.element) return;
+    selectedPageElement.element.style.setProperty("background-color", document.getElementById("page-editor-color").value, "important");
+  }
+
   function selectPageElement(element, frameDocument) {
-    if (!element || /^(HTML|BODY|SCRIPT|STYLE|SVG|PATH|IFRAME|FORM|INPUT|SELECT|TEXTAREA|BUTTON)$/.test(element.tagName)) return;
+    if (!element || /^(HTML|BODY|SCRIPT|STYLE|SVG|PATH|IFRAME|FORM|INPUT|SELECT|TEXTAREA)$/.test(element.tagName)) return;
     const isImage = element.tagName === "IMG";
+    const isCheckoutButton = element.matches(".container-order-form-two-step .form-btn");
+    const selector = pageElementSelector(element, frameDocument);
     selectedPageElement = {
-      selector: pageElementSelector(element, frameDocument),
-      storageSelector: (pageEditorPath === "/termos.html" ? "legal::" : "") + pageElementSelector(element, frameDocument),
-      type: isImage ? "image" : "text",
-      value: isImage ? element.currentSrc || element.src : element.textContent.trim()
+      selector: selector,
+      storageSelector: isCheckoutButton ? "style::" + selector : (pageEditorPath === "/termos.html" ? "legal::" : "") + selector,
+      type: isCheckoutButton ? "style" : (isImage ? "image" : "text"),
+      value: isCheckoutButton ? pageColorHex(frameDocument.defaultView.getComputedStyle(element).backgroundColor) : (isImage ? element.currentSrc || element.src : element.textContent.trim()),
+      element: element
     };
     document.getElementById("page-editor-empty").hidden = true;
     document.getElementById("page-editor-form").hidden = false;
     document.getElementById("page-editor-selector").textContent = selectedPageElement.selector;
-    document.getElementById("page-editor-text-fields").hidden = isImage;
+    document.getElementById("page-editor-text-fields").hidden = isImage || isCheckoutButton;
     document.getElementById("page-editor-image-fields").hidden = !isImage;
+    document.getElementById("page-editor-color-fields").hidden = !isCheckoutButton;
     if (isImage) document.getElementById("page-editor-image-preview").src = selectedPageElement.value;
+    else if (isCheckoutButton) document.getElementById("page-editor-color").value = selectedPageElement.value;
     else document.getElementById("page-editor-value").value = selectedPageElement.value;
     document.getElementById("page-editor-image").value = "";
     setPageEditorStatus("");
@@ -629,13 +645,13 @@
     frameDocument.head.appendChild(style);
     let hovered = null;
     frameDocument.addEventListener("mouseover", function (event) {
-      const target = event.target.closest("img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small");
+      const target = event.target.closest(".container-order-form-two-step .form-btn") || event.target.closest("img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small");
       if (hovered) hovered.removeAttribute("data-admin-edit-hover");
       hovered = target;
       if (hovered) hovered.setAttribute("data-admin-edit-hover", "true");
     }, true);
     frameDocument.addEventListener("click", function (event) {
-      const target = event.target.closest("img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small");
+      const target = event.target.closest(".container-order-form-two-step .form-btn") || event.target.closest("img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small");
       if (!target) return;
       event.preventDefault(); event.stopPropagation();
       selectPageElement(target, frameDocument);
@@ -672,7 +688,9 @@
     setPageEditorStatus("Publicando alteração...");
     try {
       let value;
-      if (selectedPageElement.type === "image") {
+      if (selectedPageElement.type === "style") {
+        value = document.getElementById("page-editor-color").value;
+      } else if (selectedPageElement.type === "image") {
         const file = normalizedPageImage(document.getElementById("page-editor-image").files[0]);
         const extension = (file.name.split(".").pop() || "webp").toLowerCase().replace(/[^a-z0-9]/g, "");
         let hash = 0;
@@ -685,9 +703,10 @@
         value = document.getElementById("page-editor-value").value.trim();
         if (!value) throw new Error("O texto não pode ficar vazio.");
       }
-      await OfferDB.upsert("page_content", [{ selector: selectedPageElement.storageSelector, content_type: selectedPageElement.type, value: value, updated_at: new Date().toISOString() }], "selector", true);
+      const databaseType = selectedPageElement.type === "style" ? "text" : selectedPageElement.type;
+      await OfferDB.upsert("page_content", [{ selector: selectedPageElement.storageSelector, content_type: databaseType, value: value, updated_at: new Date().toISOString() }], "selector", true);
       const verification = await OfferDB.select("page_content", "select=selector,content_type,value&selector=eq." + encodeURIComponent(selectedPageElement.storageSelector), true);
-      if (!verification.length || verification[0].value !== value || verification[0].content_type !== selectedPageElement.type) throw new Error("A alteração foi enviada, mas o banco não confirmou o conteúdo publicado.");
+      if (!verification.length || verification[0].value !== value || verification[0].content_type !== databaseType) throw new Error("A alteração foi enviada, mas o banco não confirmou o conteúdo publicado.");
       setPageEditorStatus("Alteração salva e confirmada no banco.", "success");
       showToast("Conteúdo publicado e verificado.");
       reloadPagePreview();
@@ -852,6 +871,7 @@
       document.getElementById("customer-city-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
       document.getElementById("page-editor-image").addEventListener("change", previewPageImageFile);
+      document.getElementById("page-editor-color").addEventListener("input", previewPageElementColor);
       startLiveVisitors();
       await Promise.all([loadOrders(), loadMetrics(), loadProductsForm(), loadSettings(), loadGatewaySettings(), loadDeliverySettings()]);
     } catch (error) { showToast(error.message, "error"); }

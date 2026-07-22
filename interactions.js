@@ -215,6 +215,8 @@
   const offerPriceStyle = document.createElement("style");
   offerPriceStyle.textContent = [
     ".paragraph-zZDNJDykY54.text-output{font-size:44px!important;white-space:nowrap}",
+    ".container-order-form-two-step .form-btn{background-color:#c2521a!important;color:#fff!important;border-color:transparent!important}",
+    ".container-order-form-two-step .form-btn:disabled{opacity:.62;filter:saturate(.72);cursor:not-allowed}",
     "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
@@ -266,11 +268,14 @@
       if (response && !response.ok) throw new Error(rows.error || "Não foi possível carregar as alterações.");
       let applied = 0;
       rows.filter(function (row) { return !row.selector.startsWith("legal::"); }).forEach(function (row) {
+        const isStyle = row.selector.startsWith("style::");
+        const selector = isStyle ? row.selector.slice(7) : row.selector;
         let element;
-        try { element = document.querySelector(row.selector); } catch (_) { return; }
+        try { element = document.querySelector(selector); } catch (_) { return; }
         if (!element) return;
+        if (isStyle) element.style.setProperty("background-color", row.value, "important");
         if (row.content_type === "image" && element.tagName === "IMG") applyManagedImage(element, row.value);
-        if (row.content_type === "text") element.textContent = row.value;
+        if (!isStyle && row.content_type === "text") element.textContent = row.value;
         applied += 1;
       });
       reportManagedContent("ready", String(applied));
