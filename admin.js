@@ -438,7 +438,7 @@
     document.getElementById("gateway-mode").value = value.checkout_mode || "payment";
     document.getElementById("gateway-subscription-interval").value = value.subscription_interval || "month";
     document.getElementById("gateway-external-url").value = value.external_url || "";
-    document.getElementById("gateway-supporter-enabled").checked = value.supporter_enabled === true;
+    document.getElementById("gateway-supporter-enabled").checked = value.supporter_enabled !== false;
     updateGatewayFormVisibility();
   }
 

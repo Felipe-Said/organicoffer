@@ -30,7 +30,7 @@ export default async function handler(request, response) {
     if (settings.provider !== "stripe") throw new Error("Gateway Stripe não está ativo.");
     if (!offer || !offer.active) throw new Error("A oferta principal está indisponível.");
     const supporterChoice = clean(input.billing_type, 20) === "subscription";
-    const optionalSupporter = settings.supporter_enabled === true;
+    const optionalSupporter = settings.supporter_enabled !== false;
     const mode = optionalSupporter ? (supporterChoice ? "subscription" : "payment") :
       (settings.checkout_mode === "subscription" ? "subscription" : "payment");
     const amount = Number(offer.price);

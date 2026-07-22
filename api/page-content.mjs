@@ -25,7 +25,7 @@ export default async function handler(request, response) {
       response.setHeader("Cache-Control", "no-store, max-age=0");
       return response.status(200).json({
         provider: value.provider === "external" ? "external" : "stripe",
-        supporter_enabled: value.supporter_enabled === true,
+        supporter_enabled: value.supporter_enabled !== false,
         external_url: /^https:\/\//i.test(String(value.external_url || "")) ? String(value.external_url) : ""
       });
     }
