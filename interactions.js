@@ -1,6 +1,19 @@
 (function () {
   "use strict";
 
+  function removeSavedPageArtifacts(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll("#singlefile-infobar,[id*='singlefile-infobar'],[class*='singlefile-infobar'],singlefile-infobar").forEach(function (element) { element.remove(); });
+  }
+
+  removeSavedPageArtifacts(document);
+  document.querySelectorAll("link[rel='canonical']").forEach(function (link) { link.href = "https://receitasdavovotereza.site/receitas"; });
+  const savedPageObserver = new MutationObserver(function (mutations) {
+    mutations.forEach(function (mutation) { mutation.addedNodes.forEach(function (node) { if (node.nodeType === 1) removeSavedPageArtifacts(node); }); });
+  });
+  savedPageObserver.observe(document.documentElement, { childList: true, subtree: true });
+  setTimeout(function () { savedPageObserver.disconnect(); }, 15000);
+
   function translatePage() {
     const translations = new Map([
       ["Vovó Tereza's Natural Remedy Book", "Livro de Remédios Naturais de Vovó Tereza"],
