@@ -1,9 +1,6 @@
 {
   "cleanUrls": true,
-  "routes": [
-    { "src": "^/$", "dest": "/blog.html" },
-    { "src": "^/receitas/?$", "dest": "/index.html" },
-    { "src": "^/blog(?:\\.html)?/?$", "status": 308, "headers": { "Location": "/" } },
-    { "handle": "filesystem" }
+  "redirects": [
+    { "source": "/blog", "destination": "/", "permanent": true }
   ]
 }
