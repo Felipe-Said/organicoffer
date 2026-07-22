@@ -21,7 +21,7 @@ export default async function handler(request, response) {
       response.status(upstream.status).json({ error: payload.message || "Não foi possível carregar o conteúdo." });
       return;
     }
-    response.setHeader("Cache-Control", "no-store, max-age=0");
+    response.setHeader("Cache-Control", "public, max-age=0, s-maxage=15, stale-while-revalidate=60");
     response.status(200).json(payload);
   } catch (error) {
     response.status(502).json({ error: "Falha na comunicação com o banco de dados." });

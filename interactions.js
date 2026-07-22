@@ -218,8 +218,6 @@
     "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
-  document.documentElement.classList.remove("translation-pending");
-
   const order = document.querySelector(".container-order-form-two-step");
   const body = order && order.querySelector(".form-body");
   const submit = order && order.querySelector(".form-btn");
@@ -261,9 +259,11 @@
 
   async function loadManagedPageContent() {
     try {
-      const response = await fetch("/api/page-content", { cache: "no-store" });
-      const rows = await response.json();
-      if (!response.ok) throw new Error(rows.error || "Não foi possível carregar as alterações.");
+      const response = window.__managedContentPromise
+        ? null
+        : await fetch("/api/page-content");
+      const rows = response ? await response.json() : await window.__managedContentPromise;
+      if (response && !response.ok) throw new Error(rows.error || "Não foi possível carregar as alterações.");
       let applied = 0;
       rows.filter(function (row) { return !row.selector.startsWith("legal::"); }).forEach(function (row) {
         let element;
@@ -274,7 +274,11 @@
         applied += 1;
       });
       reportManagedContent("ready", String(applied));
-    } catch (error) { reportManagedContent("error", error.message); }
+    } catch (error) {
+      reportManagedContent("error", error.message);
+    } finally {
+      document.documentElement.classList.remove("translation-pending");
+    }
   }
 
   loadManagedPageContent();
