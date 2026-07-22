@@ -151,6 +151,14 @@
 
   translatePage();
 
+  function restoreSalesPageLayering() {
+    const background = document.querySelector("body > #__nuxt > .bgCover100.bg-fixed");
+    if (!background) return;
+    background.style.setProperty("z-index", "-1", "important");
+    background.style.setProperty("pointer-events", "none", "important");
+  }
+  restoreSalesPageLayering();
+
   function removeInjectedRedirectWidgets(root) {
     (root || document).querySelectorAll("#kins-kins-popup,#kins_root,[id^='kins-'],[id^='kins_']").forEach(function (element) { element.remove(); });
   }
