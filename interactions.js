@@ -613,10 +613,10 @@
     const send = function () {
       const values = {};
       fields.forEach(function (field) { values[field.name] = field.value.trim(); });
-      fetch("/api/checkout-lead", {
+      fetch("/api/site-event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.assign({}, values, { session_id: visitorSession, attribution: visitorAttribution })),
+        body: JSON.stringify({ event_type: "checkout_lead", session_id: visitorSession, lead: Object.assign({}, values, { attribution: visitorAttribution }) }),
         keepalive: true
       }).catch(function () {});
     };
