@@ -6,7 +6,12 @@ export default function handler(request, response) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_ANON_KEY || "";
   const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+    process.env.STRIPE_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_KEY ||
+    process.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+    process.env.VITE_STRIPE_PUBLIC_KEY || "";
 
   response.setHeader("Content-Type", "application/javascript; charset=utf-8");
   response.setHeader("Cache-Control", "no-store, max-age=0");
