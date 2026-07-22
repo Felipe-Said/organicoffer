@@ -1065,6 +1065,11 @@
     .clarity-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     .clarity-empty { padding: 22px; text-align: center; color: var(--text-muted); }
     .gateway-checker { margin-top: 22px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: var(--bg-primary); }
+    .gateway-supporter-toggle { display: flex; align-items: flex-start; gap: 12px; padding: 15px 16px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); cursor: pointer; }
+    .gateway-supporter-toggle input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--color-rust); }
+    .gateway-supporter-toggle span,.gateway-supporter-toggle strong,.gateway-supporter-toggle small { display: block; }
+    .gateway-supporter-toggle strong { font-size: 14px; margin-bottom: 4px; }
+    .gateway-supporter-toggle small { color: var(--text-muted); font-size: 12px; line-height: 1.45; }
     .gateway-checker-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; background: var(--bg-secondary); }
     .gateway-checker-title { display: flex; gap: 12px; align-items: flex-start; }
     .gateway-checker-title > i { color: var(--color-rust); font-size: 20px; margin-top: 2px; }
@@ -1467,6 +1472,12 @@
               <select id="gateway-subscription-interval" class="select-input" style="width:100%;"><option value="month">Mensal</option><option value="year">Anual</option></select>
               <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">Usada somente quando o tipo de cobrança for assinatura.</p>
             </div>
+          </div>
+          <div class="form-group" id="gateway-supporter-options">
+            <label class="gateway-supporter-toggle" for="gateway-supporter-enabled">
+              <input type="checkbox" id="gateway-supporter-enabled">
+              <span><strong>Permitir apoio mensal opcional</strong><small>O cliente poderá escolher transformar o valor do produto em uma contribuição mensal recorrente para apoiar novas receitas.</small></span>
+            </label>
           </div>
           <div class="form-group" id="gateway-external-options" hidden>
             <label for="gateway-external-url">Link externo de pagamento</label>

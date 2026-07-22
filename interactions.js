@@ -223,6 +223,9 @@
     ".external-checkout-box p{margin:0 auto 20px;max-width:620px;color:#6f655b;font-size:15px}",
     ".external-buy-button{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;padding:13px 22px;border-radius:6px;background:#c2521a;color:#fff!important;font-size:18px;font-weight:800;text-decoration:none!important;transition:transform .2s ease,background-color .2s ease}",
     ".external-buy-button:hover{background:#a94414;transform:translateY(-1px)}.external-buy-button:active{transform:translateY(1px)}",
+    ".supporter-choice{display:flex;align-items:flex-start;gap:11px;margin:14px 0;padding:14px 15px;border:1px solid #d8c7a5;border-radius:7px;background:#fff9ed;text-align:left;cursor:pointer}",
+    ".supporter-choice input{width:18px;height:18px;margin:2px 0 0;flex:0 0 auto;accent-color:#c2521a}",
+    ".supporter-choice strong,.supporter-choice small{display:block}.supporter-choice strong{color:#173c27;font-size:15px;line-height:1.35;margin-bottom:4px}.supporter-choice small{color:#6f655b;font-size:12px;line-height:1.45}",
     "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
@@ -232,6 +235,7 @@
   const body = order && order.querySelector(".form-body");
   const submit = order && order.querySelector(".form-btn");
   const terms = order && order.querySelector("#terms-conditions-input");
+  let supporterCheckbox = null;
   const fields = order ? Array.from(order.querySelectorAll("input[name], select[name]")) : [];
   const databaseReady = Boolean(window.OfferDB && OfferDB.configured());
   const adminPreview = new URLSearchParams(location.search).has("admin_preview");
@@ -245,7 +249,25 @@
       const response = await fetch("/api/page-content?gateway=1");
       const gateway = await response.json();
       if (!response.ok) throw new Error(gateway.error || "Gateway indisponível.");
-      if (gateway.provider !== "external") return;
+      if (gateway.provider !== "external") {
+        if (gateway.supporter_enabled === true && body && terms) {
+          const wrapper = document.createElement("label"); wrapper.className = "supporter-choice";
+          supporterCheckbox = document.createElement("input"); supporterCheckbox.type = "checkbox"; supporterCheckbox.id = "monthly-supporter-choice";
+          supporterCheckbox.setAttribute("aria-describedby", "monthly-supporter-description");
+          const copy = document.createElement("span");
+          const title = document.createElement("strong"); title.textContent = "Quero ser um apoiador mensal da Vovó Tereza";
+          const detail = document.createElement("small"); detail.id = "monthly-supporter-description";
+          detail.textContent = "Ao marcar, o valor atual será cobrado todos os meses. Seu apoio ajuda a Vovó Tereza a compartilhar novas receitas e alcançar mais pessoas.";
+          copy.append(title, detail); wrapper.append(supporterCheckbox, copy);
+          const termsWrapper = terms.closest(".terms-conditions-wrapper");
+          if (termsWrapper) termsWrapper.parentElement.insertBefore(wrapper, termsWrapper);
+          supporterCheckbox.addEventListener("change", function () {
+            const mainText = submit && submit.querySelector(".main-text");
+            if (mainText) mainText.textContent = supporterCheckbox.checked ? "Continuar como apoiador mensal" : "Ir para o pagamento";
+          });
+        }
+        return;
+      }
       const target = String(gateway.external_url || "");
       if (!/^https:\/\//i.test(target)) throw new Error("Link de venda externa não configurado.");
       order.innerHTML = "";
@@ -683,7 +705,7 @@
         const response = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(Object.assign({}, values, { session_id: visitorSession }))
+          body: JSON.stringify(Object.assign({}, values, { session_id: visitorSession, billing_type: supporterCheckbox && supporterCheckbox.checked ? "subscription" : "payment" }))
         });
         const payload = await response.json();
         if (!response.ok || !payload.client_secret || !payload.session_id) throw new Error(payload.error || "Não foi possível abrir o checkout.");

@@ -438,13 +438,21 @@
     document.getElementById("gateway-mode").value = value.checkout_mode || "payment";
     document.getElementById("gateway-subscription-interval").value = value.subscription_interval || "month";
     document.getElementById("gateway-external-url").value = value.external_url || "";
+    document.getElementById("gateway-supporter-enabled").checked = value.supporter_enabled === true;
     updateGatewayFormVisibility();
   }
 
   function updateGatewayFormVisibility() {
     const external = document.getElementById("gateway-provider").value === "external";
+    const supporter = document.getElementById("gateway-supporter-enabled").checked;
+    const modeSelect = document.getElementById("gateway-mode");
+    const intervalSelect = document.getElementById("gateway-subscription-interval");
+    if (supporter) { modeSelect.value = "payment"; intervalSelect.value = "month"; }
+    modeSelect.disabled = supporter;
+    intervalSelect.disabled = supporter;
     document.getElementById("gateway-mode-group").hidden = external;
     document.getElementById("gateway-stripe-options").hidden = external;
+    document.getElementById("gateway-supporter-options").hidden = external;
     document.getElementById("gateway-stripe-security").hidden = external;
     document.getElementById("gateway-stripe-checker").hidden = external;
     document.getElementById("gateway-external-options").hidden = !external;
@@ -464,6 +472,7 @@
       checkout_mode: mode,
       currency: "brl",
       subscription_interval: document.getElementById("gateway-subscription-interval").value,
+      supporter_enabled: document.getElementById("gateway-supporter-enabled").checked,
       external_url: externalUrl
     }, updated_at: new Date().toISOString() };
     button.disabled = true;
@@ -949,6 +958,7 @@
       document.getElementById("customer-lifecycle-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("customer-source-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("gateway-provider").addEventListener("change", updateGatewayFormVisibility);
+      document.getElementById("gateway-supporter-enabled").addEventListener("change", updateGatewayFormVisibility);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
       document.getElementById("page-editor-image").addEventListener("change", previewPageImageFile);
       document.getElementById("page-editor-color").addEventListener("input", previewPageElementColor);

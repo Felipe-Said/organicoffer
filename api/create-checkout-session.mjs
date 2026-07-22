@@ -29,7 +29,10 @@ export default async function handler(request, response) {
     const lead = leadRows?.[0] || {};
     if (settings.provider !== "stripe") throw new Error("Gateway Stripe não está ativo.");
     if (!offer || !offer.active) throw new Error("A oferta principal está indisponível.");
-    const mode = settings.checkout_mode === "subscription" ? "subscription" : "payment";
+    const supporterChoice = clean(input.billing_type, 20) === "subscription";
+    const optionalSupporter = settings.supporter_enabled === true;
+    const mode = optionalSupporter ? (supporterChoice ? "subscription" : "payment") :
+      (settings.checkout_mode === "subscription" ? "subscription" : "payment");
     const amount = Number(offer.price);
     const unitAmount = Math.round(amount * 100);
     if (!Number.isFinite(amount) || unitAmount < 50) throw new Error("Configure um preço válido em Produtos & Ofertas.");
@@ -59,7 +62,7 @@ export default async function handler(request, response) {
     appendForm(params, "line_items[0][price_data][unit_amount]", unitAmount);
     appendForm(params, "line_items[0][price_data][product_data][name]", offer.title || "Livro de Remédios Antigos");
     appendForm(params, "line_items[0][price_data][product_data][metadata][product_type]", "digital");
-    if (mode === "subscription") appendForm(params, "line_items[0][price_data][recurring][interval]", settings.subscription_interval === "year" ? "year" : "month");
+    if (mode === "subscription") appendForm(params, "line_items[0][price_data][recurring][interval]", optionalSupporter ? "month" : (settings.subscription_interval === "year" ? "year" : "month"));
     appendForm(params, "line_items[0][quantity]", 1);
     appendForm(params, "customer", stripeCustomer.id);
     appendForm(params, "client_reference_id", order.id);
