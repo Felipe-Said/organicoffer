@@ -55,8 +55,7 @@ export default async function handler(request, response) {
     appendForm(customerParams, "metadata[order_id]", order.id);
     appendForm(customerParams, "metadata[order_number]", order.order_number);
     const stripeCustomer = await stripe("customers", { method: "POST", body: customerParams });
-    const protocol = request.headers["x-forwarded-proto"] || "https";
-    const origin = protocol + "://" + (request.headers["x-forwarded-host"] || request.headers.host);
+    const origin = "https://receitasdavovotereza.site";
     const params = new URLSearchParams();
     appendForm(params, "mode", mode);
     appendForm(params, "line_items[0][price_data][currency]", "brl");
