@@ -13,6 +13,21 @@ export default async function handler(request, response) {
   }
 
   try {
+    if (String(request.query?.gateway || "") === "1") {
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+      if (!serviceKey) return response.status(503).json({ error: "Configuração do servidor indisponível." });
+      const gatewayResponse = await fetch(url + "/rest/v1/app_settings?select=value&key=eq.payment_gateway&limit=1", {
+        headers: { apikey: serviceKey, Authorization: "Bearer " + serviceKey }
+      });
+      const gatewayRows = await gatewayResponse.json();
+      if (!gatewayResponse.ok) return response.status(gatewayResponse.status).json({ error: gatewayRows.message || "Não foi possível carregar o gateway." });
+      const value = gatewayRows[0]?.value || {};
+      response.setHeader("Cache-Control", "no-store, max-age=0");
+      return response.status(200).json({
+        provider: value.provider === "external" ? "external" : "stripe",
+        external_url: /^https:\/\//i.test(String(value.external_url || "")) ? String(value.external_url) : ""
+      });
+    }
     const upstream = await fetch(url + "/rest/v1/page_content?select=selector,content_type,value", {
       headers: { apikey: anonKey, Authorization: "Bearer " + anonKey }
     });

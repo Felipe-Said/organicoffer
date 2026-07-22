@@ -437,19 +437,37 @@
     document.getElementById("gateway-provider").value = value.provider || "stripe";
     document.getElementById("gateway-mode").value = value.checkout_mode || "payment";
     document.getElementById("gateway-subscription-interval").value = value.subscription_interval || "month";
+    document.getElementById("gateway-external-url").value = value.external_url || "";
+    updateGatewayFormVisibility();
+  }
+
+  function updateGatewayFormVisibility() {
+    const external = document.getElementById("gateway-provider").value === "external";
+    document.getElementById("gateway-mode-group").hidden = external;
+    document.getElementById("gateway-stripe-options").hidden = external;
+    document.getElementById("gateway-stripe-security").hidden = external;
+    document.getElementById("gateway-stripe-checker").hidden = external;
+    document.getElementById("gateway-external-options").hidden = !external;
   }
 
   async function saveGatewaySettings() {
     const button = document.getElementById("save-gateway-button");
     const mode = document.getElementById("gateway-mode").value;
+    const provider = document.getElementById("gateway-provider").value;
+    const externalUrl = document.getElementById("gateway-external-url").value.trim();
+    if (provider === "external" && !/^https:\/\/[^\s]+$/i.test(externalUrl)) {
+      showToast("Informe um link externo completo, começando com https://.", "error");
+      document.getElementById("gateway-external-url").focus(); return;
+    }
     const row = { key: "payment_gateway", value: {
-      provider: "stripe",
+      provider: provider,
       checkout_mode: mode,
       currency: "brl",
-      subscription_interval: document.getElementById("gateway-subscription-interval").value
+      subscription_interval: document.getElementById("gateway-subscription-interval").value,
+      external_url: externalUrl
     }, updated_at: new Date().toISOString() };
     button.disabled = true;
-    try { await OfferDB.upsert("app_settings", [row], "key", true); showToast("Gateway Stripe salvo no banco."); }
+    try { await OfferDB.upsert("app_settings", [row], "key", true); showToast(provider === "external" ? "Venda externa salva no banco." : "Gateway Stripe salvo no banco."); }
     catch (error) { showToast(error.message, "error"); }
     finally { button.disabled = false; }
   }
@@ -930,6 +948,7 @@
       document.getElementById("customer-city-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("customer-lifecycle-filter").addEventListener("change", renderCustomersTable);
       document.getElementById("customer-source-filter").addEventListener("change", renderCustomersTable);
+      document.getElementById("gateway-provider").addEventListener("change", updateGatewayFormVisibility);
       document.getElementById("ebook-file").addEventListener("change", selectEbookFile);
       document.getElementById("page-editor-image").addEventListener("change", previewPageImageFile);
       document.getElementById("page-editor-color").addEventListener("input", previewPageElementColor);

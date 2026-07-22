@@ -218,10 +218,17 @@
     ".container-order-form-two-step .form-btn{background-color:#c2521a!important;color:#fff!important;border-color:transparent!important}",
     ".container-order-form-two-step .form-btn.form-incomplete{opacity:.82;filter:saturate(.86)}",
     ".container-order-form-two-step .form-btn:disabled{opacity:.62;filter:saturate(.72);cursor:wait}",
+    ".external-checkout-box{padding:28px!important;text-align:center}",
+    ".external-checkout-box h3{margin:0 0 8px;font-size:24px;color:#173c27}",
+    ".external-checkout-box p{margin:0 auto 20px;max-width:620px;color:#6f655b;font-size:15px}",
+    ".external-buy-button{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;padding:13px 22px;border-radius:6px;background:#c2521a;color:#fff!important;font-size:18px;font-weight:800;text-decoration:none!important;transition:transform .2s ease,background-color .2s ease}",
+    ".external-buy-button:hover{background:#a94414;transform:translateY(-1px)}.external-buy-button:active{transform:translateY(1px)}",
     "@media screen and (max-width:480px){.paragraph-zZDNJDykY54.text-output{font-size:28px!important;line-height:1.15!important;white-space:normal;overflow-wrap:break-word}.paragraph-zZDNJDykY54.text-output p{max-width:100%;margin-inline:auto}}"
   ].join("");
   document.head.appendChild(offerPriceStyle);
   const order = document.querySelector(".container-order-form-two-step");
+  const shipping = order && order.querySelector(".shipping");
+  if (shipping) shipping.remove();
   const body = order && order.querySelector(".form-body");
   const submit = order && order.querySelector(".form-btn");
   const terms = order && order.querySelector("#terms-conditions-input");
@@ -231,6 +238,30 @@
   let visitorSession = sessionStorage.getItem("oferta-organica-visitor-session");
   const attributionCookieName = "vt_attribution";
   const editorElementQuery = "img,span,strong,em,p,h1,h2,h3,h4,h5,h6,a,li,label,small";
+
+  async function configureCheckoutGateway() {
+    if (!order || adminPreview) return;
+    try {
+      const response = await fetch("/api/page-content?gateway=1");
+      const gateway = await response.json();
+      if (!response.ok) throw new Error(gateway.error || "Gateway indisponível.");
+      if (gateway.provider !== "external") return;
+      const target = String(gateway.external_url || "");
+      if (!/^https:\/\//i.test(target)) throw new Error("Link de venda externa não configurado.");
+      order.innerHTML = "";
+      order.classList.add("external-checkout-box");
+      const heading = document.createElement("h3"); heading.textContent = "Acesso imediato ao e-book";
+      const description = document.createElement("p"); description.textContent = "Finalize sua compra com segurança na plataforma de pagamento.";
+      const link = document.createElement("a"); link.className = "external-buy-button"; link.href = target; link.rel = "noopener noreferrer";
+      link.textContent = "Quero comprar agora";
+      link.addEventListener("click", function () { recordEvent("checkout_click", { provider: "external" }); });
+      order.append(heading, description, link);
+    } catch (error) {
+      console.warn("Não foi possível carregar a venda externa:", error.message);
+    }
+  }
+
+  configureCheckoutGateway();
 
   function installStableEditorKeys() {
     const counters = new Map();

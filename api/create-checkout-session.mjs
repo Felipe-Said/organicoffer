@@ -15,9 +15,8 @@ export default async function handler(request, response) {
     };
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(customer.session_id)) customer.session_id = "";
     if (!customer.name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) ||
-        customer.phone.replace(/\D/g, "").length < 8 || !customer.address || !customer.city || !customer.state ||
-        !/^[A-Z]{2}$/.test(customer.country) || !customer.zipcode) {
-      return json(response, 400, { error: "Preencha corretamente os dados pessoais e o endereço." });
+        customer.phone.replace(/\D/g, "").length < 8) {
+      return json(response, 400, { error: "Preencha corretamente nome, e-mail e telefone." });
     }
 
     const [settingsRows, offerRows, leadRows] = await Promise.all([
@@ -50,11 +49,6 @@ export default async function handler(request, response) {
     appendForm(customerParams, "name", customer.name);
     appendForm(customerParams, "email", customer.email);
     appendForm(customerParams, "phone", customer.phone);
-    appendForm(customerParams, "address[line1]", customer.address);
-    appendForm(customerParams, "address[city]", customer.city);
-    appendForm(customerParams, "address[state]", customer.state);
-    appendForm(customerParams, "address[country]", customer.country);
-    appendForm(customerParams, "address[postal_code]", customer.zipcode);
     appendForm(customerParams, "metadata[order_id]", order.id);
     appendForm(customerParams, "metadata[order_number]", order.order_number);
     const stripeCustomer = await stripe("customers", { method: "POST", body: customerParams });

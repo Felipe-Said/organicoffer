@@ -1449,14 +1449,14 @@
           <div class="form-row">
             <div class="form-group">
               <label for="gateway-provider">Gateway ativo</label>
-              <select id="gateway-provider" class="select-input" style="width:100%;"><option value="stripe">Stripe</option></select>
+              <select id="gateway-provider" class="select-input" style="width:100%;"><option value="stripe">Stripe</option><option value="external">Venda Externa</option></select>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="gateway-mode-group">
               <label for="gateway-mode">Tipo de cobrança</label>
               <select id="gateway-mode" class="select-input" style="width:100%;"><option value="payment">Pagamento único</option><option value="subscription">Assinatura</option></select>
             </div>
           </div>
-          <div class="form-row">
+          <div class="form-row" id="gateway-stripe-options">
             <div class="form-group">
               <label>Moeda da cobrança</label>
               <input type="text" class="form-control" value="Real brasileiro (BRL)" disabled>
@@ -1468,11 +1468,16 @@
               <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">Usada somente quando o tipo de cobrança for assinatura.</p>
             </div>
           </div>
-          <div style="background-color:var(--bg-secondary);padding:20px;border-radius:8px;border:1px solid var(--border-color);">
+          <div class="form-group" id="gateway-external-options" hidden>
+            <label for="gateway-external-url">Link externo de pagamento</label>
+            <input type="url" id="gateway-external-url" class="form-control" placeholder="https://pay.hotmart.com/..." inputmode="url">
+            <p style="font-size:12px;color:var(--text-muted);margin-top:7px;">Use o checkout publicado pela Hotmart, Kirvano ou outra plataforma de venda e entrega.</p>
+          </div>
+          <div id="gateway-stripe-security" style="background-color:var(--bg-secondary);padding:20px;border-radius:8px;border:1px solid var(--border-color);">
             <p style="font-weight:700;margin-bottom:6px;"><i class="fa-solid fa-shield-halved" style="color:var(--color-green);margin-right:7px;"></i>Chaves protegidas pela Vercel</p>
             <p style="font-size:13px;color:var(--text-muted);line-height:1.55;">Configure <strong>STRIPE_SECRET_KEY</strong> e <strong>STRIPE_WEBHOOK_SECRET</strong> nas variáveis de ambiente. A chave secreta nunca é salva ou exibida no navegador.</p>
           </div>
-          <section class="gateway-checker" aria-labelledby="gateway-checker-heading">
+          <section class="gateway-checker" id="gateway-stripe-checker" aria-labelledby="gateway-checker-heading">
             <div class="gateway-checker-head">
               <div class="gateway-checker-title"><i class="fa-solid fa-stethoscope"></i><div><h3 id="gateway-checker-heading">Diagnóstico do gateway</h3><p>Confere a conexão com a Stripe, webhook, oferta e confirmações de venda.</p></div></div>
               <button type="button" class="btn btn-secondary" id="check-gateway-button" onclick="checkGatewayHealth()"><i class="fa-solid fa-circle-check"></i> Verificar agora</button>
