@@ -104,12 +104,13 @@
     if (!posts.length) list.textContent = "Nenhuma postagem criada.";
   }
   function clearPost() {
-    ["blog-post-id","blog-post-title","blog-post-slug","blog-post-excerpt","blog-post-content"].forEach(function (id) { el(id).value = ""; });
+    ["blog-post-id","blog-post-title","blog-post-slug","blog-post-excerpt","blog-post-meta-title","blog-post-meta-description","blog-post-keywords","blog-post-content"].forEach(function (id) { el(id).value = ""; });
+    el("blog-post-author").value = "Equipe Vovó Tereza";
     el("blog-post-category").value = ""; el("blog-post-status").value = "draft"; el("blog-delete-post").disabled = true;
     files.postDesktop = null; files.postMobile = null; el("blog-post-desktop").value = ""; el("blog-post-mobile").value = ""; showImage(el("blog-post-desktop-preview"), ""); showImage(el("blog-post-mobile-preview"), "");
   }
   function editPost(post) {
-    el("blog-post-id").value = post.id; el("blog-post-title").value = post.title; el("blog-post-slug").value = post.slug; el("blog-post-excerpt").value = post.excerpt || ""; el("blog-post-content").value = post.content || ""; el("blog-post-category").value = post.category_id || ""; el("blog-post-status").value = post.status; el("blog-delete-post").disabled = false;
+    el("blog-post-id").value = post.id; el("blog-post-title").value = post.title; el("blog-post-slug").value = post.slug; el("blog-post-excerpt").value = post.excerpt || ""; el("blog-post-meta-title").value = post.meta_title || ""; el("blog-post-meta-description").value = post.meta_description || ""; el("blog-post-keywords").value = post.focus_keywords || ""; el("blog-post-author").value = post.author_name || "Equipe Vovó Tereza"; el("blog-post-content").value = post.content || ""; el("blog-post-category").value = post.category_id || ""; el("blog-post-status").value = post.status; el("blog-delete-post").disabled = false;
     showImage(el("blog-post-desktop-preview"), post.desktop_image_url); showImage(el("blog-post-mobile-preview"), post.mobile_image_url);
     document.querySelectorAll(".blog-list-item").forEach(function (item) { item.classList.toggle("active", item.dataset.id === post.id); });
   }
@@ -119,7 +120,7 @@
     const desktop = await upload(files.postDesktop, "posts/desktop") || current.desktop_image_url || "";
     const mobile = await upload(files.postMobile, "posts/mobile") || current.mobile_image_url || desktop;
     const status = el("blog-post-status").value;
-    const row = { title: title, slug: slugify(el("blog-post-slug").value || title), excerpt: el("blog-post-excerpt").value.trim(), content: el("blog-post-content").value, category_id: el("blog-post-category").value || null, status: status, desktop_image_url: desktop, mobile_image_url: mobile, published_at: status === "published" ? (current.published_at || new Date().toISOString()) : null, updated_at: new Date().toISOString() };
+    const row = { title: title, slug: slugify(el("blog-post-slug").value || title), excerpt: el("blog-post-excerpt").value.trim(), meta_title: el("blog-post-meta-title").value.trim(), meta_description: el("blog-post-meta-description").value.trim(), focus_keywords: el("blog-post-keywords").value.trim(), author_name: el("blog-post-author").value.trim() || "Equipe Vovó Tereza", reviewed_at: new Date().toISOString(), content: el("blog-post-content").value, category_id: el("blog-post-category").value || null, status: status, desktop_image_url: desktop, mobile_image_url: mobile, published_at: status === "published" ? (current.published_at || new Date().toISOString()) : null, updated_at: new Date().toISOString() };
     if (id) await OfferDB.update("blog_posts", "id=eq." + encodeURIComponent(id), row, true); else await OfferDB.insert("blog_posts", [row], true);
     clearPost(); await loadAll(); toast("Postagem salva.");
   }

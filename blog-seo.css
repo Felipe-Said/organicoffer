@@ -1,0 +1,32 @@
+.answer-box {
+  padding: 18px 20px;
+  border-left: 4px solid var(--blog-primary);
+  background: rgba(36, 84, 56, .07);
+  border-radius: 0 8px 8px 0;
+}
+.health-alert {
+  display: block;
+  margin: 28px 0;
+  padding: 18px 20px;
+  background: #fff5df;
+  border: 1px solid #e4c887;
+  border-radius: 8px;
+}
+.article-cta {
+  display: inline-block;
+  padding: 14px 20px;
+  border-radius: 7px;
+  background: var(--blog-primary);
+  color: #fff !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+.article-sources { font-size: 14px; color: var(--muted); }
+.blog-related {
+  display: grid;
+  gap: 10px;
+  padding: 28px clamp(24px, 5vw, 56px) 42px;
+  border-top: 1px solid var(--line);
+}
+.blog-related h2 { margin: 0 0 8px; font: 700 22px var(--serif); }
+.blog-related a { color: var(--blog-primary); font-weight: 700; text-decoration: none; }

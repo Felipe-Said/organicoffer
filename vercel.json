@@ -8,5 +8,9 @@
       "permanent": true
     },
     { "source": "/blog", "destination": "/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/artigos/:slug", "destination": "/?post=:slug" },
+    { "source": "/categoria/:slug", "destination": "/?category=:slug" }
   ]
 }

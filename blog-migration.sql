@@ -22,6 +22,11 @@ create table if not exists public.blog_posts (
   status text not null default 'draft' check (status in ('draft','published')),
   desktop_image_url text not null default '',
   mobile_image_url text not null default '',
+  meta_title text not null default '',
+  meta_description text not null default '',
+  focus_keywords text not null default '',
+  author_name text not null default 'Equipe Vovó Tereza',
+  reviewed_at timestamptz,
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -41,6 +46,11 @@ create table if not exists public.blog_settings (
 );
 
 alter table public.blog_settings add column if not exists custom_css text not null default '';
+alter table public.blog_posts add column if not exists meta_title text not null default '';
+alter table public.blog_posts add column if not exists meta_description text not null default '';
+alter table public.blog_posts add column if not exists focus_keywords text not null default '';
+alter table public.blog_posts add column if not exists author_name text not null default 'Equipe Vovó Tereza';
+alter table public.blog_posts add column if not exists reviewed_at timestamptz;
 
 insert into public.blog_settings(id) values ('main') on conflict (id) do nothing;
 update public.blog_settings set blog_url='/' where id='main' and blog_url in ('/blog.html','/blog');

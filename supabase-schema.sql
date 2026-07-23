@@ -118,7 +118,9 @@ create table if not exists public.blog_categories (
 create table if not exists public.blog_posts (
   id uuid primary key default gen_random_uuid(), title text not null, slug text not null unique, excerpt text not null default '', content text not null default '',
   category_id uuid references public.blog_categories(id) on delete set null, status text not null default 'draft' check(status in ('draft','published')),
-  desktop_image_url text not null default '', mobile_image_url text not null default '', published_at timestamptz,
+  desktop_image_url text not null default '', mobile_image_url text not null default '',
+  meta_title text not null default '', meta_description text not null default '', focus_keywords text not null default '',
+  author_name text not null default 'Equipe Vovó Tereza', reviewed_at timestamptz, published_at timestamptz,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 create table if not exists public.blog_settings (
